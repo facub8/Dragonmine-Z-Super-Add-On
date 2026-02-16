@@ -45,8 +45,10 @@ public class CombatEvent {
 
 	@SubscribeEvent(priority = EventPriority.HIGH)
 	public static void onLivingAttack(LivingAttackEvent event) {
-		if (event.getEntity().level().isClientSide) return;
-		if (!(event.getEntity() instanceof Player victim)) return;
+		if (event.getEntity().level().isClientSide)
+			return;
+		if (!(event.getEntity() instanceof Player victim))
+			return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
 			if (victimData.getStatus().isUltraInstinctActive()) {
@@ -81,40 +83,44 @@ public class CombatEvent {
 						dodgeChance *= ratio;
 					} else if (attackerBP < victimBP) {
 						double ratio = (double) victimBP / Math.max(1, attackerBP);
-						if (ratio >= 5.0) {
-							dodgeChance = 1.0; 
-						} else {
-							dodgeChance = Math.min(1.0, dodgeChance + (ratio - 1.0) * 0.2);
-						}
+
+						dodgeChance = Math.min(1.0, dodgeChance * ratio);
+
 					}
 				}
 
 				if (victim.getRandom().nextDouble() < dodgeChance) {
 					event.setCanceled(true);
-					victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 1.0F, 1.0F);
+					victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
+							SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 1.0F, 1.0F);
 
 					if (victim.level() instanceof ServerLevel serverLevel) {
-						serverLevel.sendParticles(MainParticles.DIVINE.get(), victim.getX(), victim.getY() + 1.0, victim.getZ(), 5, 0.5, 0.5, 0.5, 0.1);
+						serverLevel.sendParticles(MainParticles.DIVINE.get(), victim.getX(), victim.getY() + 1.0,
+								victim.getZ(), 5, 0.5, 0.5, 0.5, 0.1);
 					}
 
 					if (victim instanceof ServerPlayer serverPlayer) {
-						NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(victim.getUUID(), "evasion", 0, victim.getId()), serverPlayer);
+						NetworkHandler.sendToTrackingEntityAndSelf(
+								new TriggerAnimationS2C(victim.getUUID(), "evasion", 0, victim.getId()), serverPlayer);
 					}
-					
+
 					// Force reset hurt values to ensure no visual damage feedback
 					victim.hurtTime = 0;
 					victim.hurtDuration = 0;
 					victim.invulnerableTime = 0;
 
-					victimData.getCharacter().getFormMasteries().addMastery(victimData.getCharacter().getActiveFormGroup(), victimData.getCharacter().getActiveForm(), 0, 0);
+					victimData.getCharacter().getFormMasteries().addMastery(
+							victimData.getCharacter().getActiveFormGroup(), victimData.getCharacter().getActiveForm(),
+							0, 0);
 
 					if (attackerBP >= victimBP) {
-						victimData.getCharacter().getFormMasteries().addMastery("special", "ultrainstinct", 0.05, 100.0);
+						victimData.getCharacter().getFormMasteries().addMastery("special", "ultrainstinct", 0.05,
+								100.0);
 					}
 
 					// Consume attacker stamina even on dodge
 					if (source.getEntity() instanceof Player attacker && source.getMsgId().equals("player")) {
-						double[] dummyDamage = {event.getAmount()};
+						double[] dummyDamage = { event.getAmount() };
 						AtomicBoolean dummyCancel = new AtomicBoolean(false);
 						handleAttackerCombatStats(attacker, victim, dummyDamage, dummyCancel);
 					}
@@ -123,14 +129,16 @@ public class CombatEvent {
 		});
 	}
 
-	private static void handleAttackerCombatStats(Player attacker, Entity target, double[] currentDamage, AtomicBoolean shouldCancel) {
+	private static void handleAttackerCombatStats(Player attacker, Entity target, double[] currentDamage,
+			AtomicBoolean shouldCancel) {
 		if (attacker.hasEffect(MainEffects.STUN.get()) || attacker.isBlocking()) {
 			shouldCancel.set(true);
 			return;
 		}
 
 		StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
-			if (!attackerData.getStatus().hasCreatedCharacter()) return;
+			if (!attackerData.getStatus().hasCreatedCharacter())
+				return;
 
 			double mcBaseDamage = currentDamage[0];
 			double dmzDamage = attackerData.getMeleeDamage();
@@ -148,7 +156,8 @@ public class CombatEvent {
 					}
 				}
 
-				if (adjustedStrength > 1.0F) adjustedStrength = 1.0F;
+				if (adjustedStrength > 1.0F)
+					adjustedStrength = 1.0F;
 				isCooldownFull = adjustedStrength >= 0.9F;
 
 				float damageScale = 0.2F + adjustedStrength * adjustedStrength * 0.8F;
@@ -157,7 +166,8 @@ public class CombatEvent {
 				isCooldownFull = true;
 			}
 
-			int baseStaminaRequired = (int) Math.ceil(dmzDamage * ConfigManager.getServerConfig().getCombat().getStaminaConsumptionRatio());
+			int baseStaminaRequired = (int) Math
+					.ceil(dmzDamage * ConfigManager.getServerConfig().getCombat().getStaminaConsumptionRatio());
 			double gravityMult = GravityLogic.getConsumptionMultiplier(attacker);
 			baseStaminaRequired = (int) (baseStaminaRequired * gravityMult);
 			double staminaDrainMultiplier = attackerData.getAdjustedStaminaDrain();
@@ -168,8 +178,9 @@ public class CombatEvent {
 				if (isCooldownFull) {
 					dmzDamage = attackerData.getStrikeDamage();
 					int currentCombo = ComboManager.getCombo(attacker.getUUID());
-					
-					if (currentCombo > 0 && !ComboManager.shouldContinueCombo(attacker.getUUID(), target)) currentCombo = 0;
+
+					if (currentCombo > 0 && !ComboManager.shouldContinueCombo(attacker.getUUID(), target))
+						currentCombo = 0;
 
 					int nextCombo = (currentCombo % 4) + 1;
 					ComboManager.setCombo(attacker.getUUID(), nextCombo);
@@ -180,38 +191,47 @@ public class CombatEvent {
 					staminaRequired = (int) (staminaRequired * 1.25);
 
 					if (attacker instanceof ServerPlayer serverPlayer) {
-						NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), "combo", nextCombo), serverPlayer);
+						NetworkHandler.sendToTrackingEntityAndSelf(
+								new TriggerAnimationS2C(serverPlayer.getUUID(), "combo", nextCombo), serverPlayer);
 					}
 
-					attacker.level().playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(), MainSounds.CRITICO1.get(), SoundSource.PLAYERS, 0.5F, 1.0F + (nextCombo * 0.1F));
+					attacker.level().playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(),
+							MainSounds.CRITICO1.get(), SoundSource.PLAYERS, 0.5F, 1.0F + (nextCombo * 0.1F));
 
 					if (nextCombo == 4) {
 						Vec3 look = attacker.getLookAngle();
 						target.setDeltaMovement(look.x * 3.0, 0.5, look.z * 3.0);
 						target.hurtMarked = true;
 						ComboManager.enableTeleportWindow(attacker.getUUID(), target.getId());
-						attacker.level().playSound(null, target.getX(), target.getY(), target.getZ(), MainSounds.CRITICO2.get(), SoundSource.PLAYERS, 0.8f, 1.0f);
+						attacker.level().playSound(null, target.getX(), target.getY(), target.getZ(),
+								MainSounds.CRITICO2.get(), SoundSource.PLAYERS, 0.8f, 1.0f);
 						ComboManager.resetCombo(attacker.getUUID());
-						attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
+						attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD,
+								ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
 					}
 				} else {
 					ComboManager.resetCombo(attacker.getUUID());
-					attacker.level().playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.5F, 1.5F);
-					attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
+					attacker.level().playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(),
+							SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.5F, 1.5F);
+					attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD,
+							ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
 				}
 			} else {
 				ComboManager.resetCombo(attacker.getUUID());
-				attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
+				attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD,
+						ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
 			}
 
 			double finalDmzDamage;
 			if (currentStamina >= staminaRequired) {
 				finalDmzDamage = dmzDamage;
-				if (!attacker.isCreative()) attackerData.getResources().removeStamina(staminaRequired);
+				if (!attacker.isCreative())
+					attackerData.getResources().removeStamina(staminaRequired);
 			} else {
 				double staminaRatio = (double) currentStamina / staminaRequired;
 				finalDmzDamage = dmzDamage * staminaRatio;
-				if (!attacker.isCreative()) attackerData.getResources().setCurrentStamina(0);
+				if (!attacker.isCreative())
+					attackerData.getResources().setCurrentStamina(0);
 			}
 
 			if (attackerData.getCharacter().hasActiveForm()) {
@@ -219,7 +239,8 @@ public class CombatEvent {
 				if (activeForm != null) {
 					String formGroup = attackerData.getCharacter().getActiveFormGroup();
 					String formName = attackerData.getCharacter().getActiveForm();
-					attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerHit(), activeForm.getMaxMastery());
+					attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName,
+							activeForm.getMasteryPerHit(), activeForm.getMaxMastery());
 				}
 			}
 
@@ -236,32 +257,41 @@ public class CombatEvent {
 				int kiCost = 0;
 				switch (weaponType.toLowerCase()) {
 					case "blade" -> {
-						kiCost = (int) Math.round(attackerData.getMaxEnergy() * ConfigManager.getServerConfig().getCombat().getKiBladeConfig()[1]);
+						kiCost = (int) Math.round(attackerData.getMaxEnergy()
+								* ConfigManager.getServerConfig().getCombat().getKiBladeConfig()[1]);
 						if (attackerData.getResources().getCurrentEnergy() >= kiCost) {
-							currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getServerConfig().getCombat().getKiBladeConfig()[0];
+							currentDamage[0] = currentDamage[0] + attackerData.getKiDamage()
+									* ConfigManager.getServerConfig().getCombat().getKiBladeConfig()[0];
 						}
 					}
 					case "scythe" -> {
-						kiCost = (int) Math.round(attackerData.getMaxEnergy() * ConfigManager.getServerConfig().getCombat().getKiScytheConfig()[1]);
+						kiCost = (int) Math.round(attackerData.getMaxEnergy()
+								* ConfigManager.getServerConfig().getCombat().getKiScytheConfig()[1]);
 						if (attackerData.getResources().getCurrentEnergy() >= kiCost) {
-							currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getServerConfig().getCombat().getKiScytheConfig()[0];
+							currentDamage[0] = currentDamage[0] + attackerData.getKiDamage()
+									* ConfigManager.getServerConfig().getCombat().getKiScytheConfig()[0];
 						}
 					}
 					case "clawlance" -> {
-						kiCost = (int) Math.round(attackerData.getMaxEnergy() * ConfigManager.getServerConfig().getCombat().getKiClawLanceConfig()[1]);
+						kiCost = (int) Math.round(attackerData.getMaxEnergy()
+								* ConfigManager.getServerConfig().getCombat().getKiClawLanceConfig()[1]);
 						if (attackerData.getResources().getCurrentEnergy() >= kiCost) {
-							currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getServerConfig().getCombat().getKiClawLanceConfig()[0];
+							currentDamage[0] = currentDamage[0] + attackerData.getKiDamage()
+									* ConfigManager.getServerConfig().getCombat().getKiClawLanceConfig()[0];
 						}
 					}
 				}
 
-				if (!attacker.isCreative() && !(target instanceof PunchMachineEntity)) attackerData.getResources().removeEnergy(kiCost);
+				if (!attacker.isCreative() && !(target instanceof PunchMachineEntity))
+					attackerData.getResources().removeEnergy(kiCost);
 			}
 
-			if (attacker instanceof ServerPlayer serverPlayer) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+			if (attacker instanceof ServerPlayer serverPlayer)
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 
 			if (target instanceof Player) {
-				if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout()) attackerData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
+				if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout())
+					attackerData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
 			}
 
 			if (target instanceof PunchMachineEntity punchMachineEntity) {
@@ -277,19 +307,19 @@ public class CombatEvent {
 	@SubscribeEvent(priority = EventPriority.HIGH)
 	public static void onLivingHurt(LivingHurtEvent event) {
 		DamageSource source = event.getSource();
-		final double[] currentDamage = {event.getAmount()};
+		final double[] currentDamage = { event.getAmount() };
 
 		// Attacker Damage Event
 		if (source.getEntity() instanceof Player attacker && source.getMsgId().equals("player")) {
 			AtomicBoolean shouldCancel = new AtomicBoolean(false);
 			handleAttackerCombatStats(attacker, event.getEntity(), currentDamage, shouldCancel);
-			
+
 			if (shouldCancel.get()) {
 				event.setCanceled(true);
 				event.setAmount(0);
 				return;
 			}
-			
+
 			event.setAmount((float) currentDamage[0]);
 		}
 
@@ -301,12 +331,12 @@ public class CombatEvent {
 					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout())
 						victimData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
 
-
 					double defense = victimData.getDefense();
 					boolean blocked = false;
 
 					if (ConfigManager.getServerConfig().getCombat().isEnableBlocking()) {
-						if (victimData.getStatus().isBlocking() && !victimData.getStatus().isStunned() && source.getEntity() != null) {
+						if (victimData.getStatus().isBlocking() && !victimData.getStatus().isStunned()
+								&& source.getEntity() != null) {
 							Vec3 targetLook = victim.getLookAngle();
 							Vec3 sourceLoc = source.getEntity().position();
 							Vec3 targetLoc = victim.position();
@@ -316,22 +346,29 @@ public class CombatEvent {
 								long currentTime = System.currentTimeMillis();
 								long blockTime = victimData.getStatus().getLastBlockTime();
 								int parryWindow = ConfigManager.getServerConfig().getCombat().getParryWindowMs();
-								boolean isParry = ((currentTime - blockTime) <= parryWindow) && ConfigManager.getServerConfig().getCombat().isEnableParrying();
+								boolean isParry = ((currentTime - blockTime) <= parryWindow)
+										&& ConfigManager.getServerConfig().getCombat().isEnableParrying();
 
-								double poiseMultiplier = ConfigManager.getServerConfig().getCombat().getPoiseDamageMultiplier();
-								if (!(source.getEntity() instanceof Player)) poiseMultiplier *= 5.0;
+								double poiseMultiplier = ConfigManager.getServerConfig().getCombat()
+										.getPoiseDamageMultiplier();
+								if (!(source.getEntity() instanceof Player))
+									poiseMultiplier *= 5.0;
 								float poiseDamage = (float) (currentDamage[0] * poiseMultiplier);
 
-								if (isParry) poiseDamage *= 0.75f;
+								if (isParry)
+									poiseDamage *= 0.75f;
 								int currentPoise = victimData.getResources().getCurrentPoise();
-								//System.out.println("Poise actual: " + currentPoise + ", Daño de poise: " + poiseDamage);
+								// System.out.println("Poise actual: " + currentPoise + ", Daño de poise: " +
+								// poiseDamage);
 
 								if (currentPoise - poiseDamage <= 0) {
 									victimData.getResources().setCurrentPoise(0);
 									victimData.getStatus().setBlocking(false);
 
-									int stunDuration = ConfigManager.getServerConfig().getCombat().getBlockBreakStunDurationTicks();
-									victim.addEffect(new MobEffectInstance(MainEffects.STUN.get(), stunDuration, 0, false, false, true));
+									int stunDuration = ConfigManager.getServerConfig().getCombat()
+											.getBlockBreakStunDurationTicks();
+									victim.addEffect(new MobEffectInstance(MainEffects.STUN.get(), stunDuration, 0,
+											false, false, true));
 									int regenCd = ConfigManager.getServerConfig().getCombat().getPoiseRegenCooldown();
 									victimData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
 
@@ -349,15 +386,15 @@ public class CombatEvent {
 
 									if (victim.level() instanceof ServerLevel serverLevel) {
 										Vec3 look = victim.getLookAngle();
-										Vec3 spawnPos = victim.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
+										Vec3 spawnPos = victim.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3,
+												0);
 
 										serverLevel.sendParticles(
 												MainParticles.GUARD_BLOCK.get(),
 												spawnPos.x, spawnPos.y, spawnPos.z,
 												0,
 												1.0, 0.1, 0.1,
-												1.0
-										);
+												1.0);
 									}
 								} else {
 									victimData.getResources().removePoise((int) poiseDamage);
@@ -372,14 +409,17 @@ public class CombatEvent {
 									if (isParry) {
 										finalDmg = 0;
 										if (source.getEntity() instanceof LivingEntity attackerLiving) {
-											attackerLiving.knockback(1.5D, victim.getX() - attackerLiving.getX(), victim.getZ() - attackerLiving.getZ());
-											attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
+											attackerLiving.knockback(1.5D, victim.getX() - attackerLiving.getX(),
+													victim.getZ() - attackerLiving.getZ());
+											attackerLiving
+													.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
 
 											// Efecto de Parry (temblor de pantalla pequeño) al atacante
-											attackerLiving.addEffect(new MobEffectInstance(MainEffects.STAGGER.get(), 60, 1, false, false, true));
+											attackerLiving.addEffect(new MobEffectInstance(MainEffects.STAGGER.get(),
+													60, 1, false, false, true));
 										}
-										//System.out.println("Parry!");
-										//SONIDO PARRY
+										// System.out.println("Parry!");
+										// SONIDO PARRY
 										victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
 												MainSounds.PARRY.get(),
 												net.minecraft.sounds.SoundSource.PLAYERS,
@@ -388,36 +428,36 @@ public class CombatEvent {
 
 										if (victim.level() instanceof ServerLevel serverLevel) {
 											Vec3 look = victim.getLookAngle();
-											Vec3 spawnPos = victim.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
+											Vec3 spawnPos = victim.getEyePosition().add(look.scale(0.6)).subtract(0,
+													0.3, 0);
 
 											serverLevel.sendParticles(
 													MainParticles.GUARD_BLOCK.get(),
 													spawnPos.x, spawnPos.y, spawnPos.z,
 													0,
 													1.0, 1.0, 1.0,
-													1.0
-											);
+													1.0);
 											for (int i = 0; i < 15; i++) {
 												serverLevel.sendParticles(
 														MainParticles.KI_TRAIL.get(),
 														spawnPos.x, spawnPos.y, spawnPos.z,
 														0,
 														1.0, 1.0, 1.0,
-														1.0
-												);
+														1.0);
 												serverLevel.sendParticles(
 														MainParticles.SPARKS.get(),
 														spawnPos.x, spawnPos.y, spawnPos.z,
 														0,
 														1.0, 1.0, 1.0,
-														1.0
-												);
+														1.0);
 											}
 										}
 
 									} else {
-										double reductionCap = ConfigManager.getServerConfig().getCombat().getBlockDamageReductionCap();
-										double reductionMin = ConfigManager.getServerConfig().getCombat().getBlockDamageReductionMin();
+										double reductionCap = ConfigManager.getServerConfig().getCombat()
+												.getBlockDamageReductionCap();
+										double reductionMin = ConfigManager.getServerConfig().getCombat()
+												.getBlockDamageReductionMin();
 										double mitigationPct = (defense * 3.0) / (currentDamage[0] + (defense * 3.0));
 										mitigationPct = Math.min(reductionCap, Math.max(mitigationPct, reductionMin));
 
@@ -433,7 +473,8 @@ public class CombatEvent {
 											soundToPlay = MainSounds.BLOCK3.get();
 										}
 
-//                                        System.out.println("Bloqueo! Daño antes: " + originalDmg + ", después: " + finalDmg);
+										// System.out.println("Bloqueo! Daño antes: " + originalDmg + ", después: " +
+										// finalDmg);
 
 										victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
 												soundToPlay,
@@ -441,7 +482,7 @@ public class CombatEvent {
 												1.0F,
 												0.9F + victim.getRandom().nextFloat() * 0.1F);
 
-										//EFECTOS
+										// EFECTOS
 										if (victim.level() instanceof ServerLevel serverLevel) {
 											double maxPoise = victimData.getMaxPoise();
 											double currentPoiseVal = victimData.getResources().getCurrentPoise();
@@ -463,15 +504,15 @@ public class CombatEvent {
 											}
 
 											Vec3 look = victim.getLookAngle();
-											Vec3 spawnPos = victim.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
+											Vec3 spawnPos = victim.getEyePosition().add(look.scale(0.6)).subtract(0,
+													0.3, 0);
 
 											serverLevel.sendParticles(
 													MainParticles.BLOCK_PARTICLE.get(),
 													spawnPos.x, spawnPos.y, spawnPos.z,
 													0,
 													r, g, b,
-													1.0
-											);
+													1.0);
 										}
 
 									}
@@ -479,12 +520,13 @@ public class CombatEvent {
 									if (victim instanceof ServerPlayer sPlayer) {
 										DMZEvent.PlayerBlockEvent blockEvent = new DMZEvent.PlayerBlockEvent(
 												sPlayer,
-												source.getEntity() instanceof LivingEntity ? (LivingEntity) source.getEntity() : null,
+												source.getEntity() instanceof LivingEntity
+														? (LivingEntity) source.getEntity()
+														: null,
 												originalDmg,
 												finalDmg,
 												isParry,
-												poiseDamage
-										);
+												poiseDamage);
 										MinecraftForge.EVENT_BUS.post(blockEvent);
 
 										if (!blockEvent.isCanceled()) {
@@ -518,11 +560,11 @@ public class CombatEvent {
 									formGroup,
 									formName,
 									activeForm.getMasteryPerDamageReceived(),
-									activeForm.getMaxMastery()
-							);
+									activeForm.getMaxMastery());
 
 							if (victim instanceof ServerPlayer serverPlayer) {
-								NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+								NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer),
+										serverPlayer);
 							}
 						}
 					}
@@ -535,15 +577,18 @@ public class CombatEvent {
 
 	private static boolean isEmptyHandOrNoDamageItem(Player player) {
 		ItemStack mainHand = player.getMainHandItem();
-		if (mainHand.isEmpty()) return true;
+		if (mainHand.isEmpty())
+			return true;
 		var attackDamageModifier = mainHand.getAttributeModifiers(EquipmentSlot.MAINHAND).get(Attributes.ATTACK_DAMAGE);
 		return attackDamageModifier.isEmpty();
 	}
 
 	public static void handleDash(ServerPlayer player, float xInput, float zInput, boolean isDoubleDash) {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			if (!data.getStatus().hasCreatedCharacter()) return;
-			if (player.hasEffect(MainEffects.STUN.get())) return;
+			if (!data.getStatus().hasCreatedCharacter())
+				return;
+			if (player.hasEffect(MainEffects.STUN.get()))
+				return;
 
 			if (ComboManager.canTeleport(player.getUUID())) {
 				int targetId = ComboManager.getTeleportTarget(player.getUUID());
@@ -558,7 +603,8 @@ public class CombatEvent {
 					player.setYRot(livingTarget.getYRot());
 					player.setYHeadRot(livingTarget.getYRot());
 					player.hurtMarked = true;
-					player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TP_SHORT.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+					player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+							MainSounds.TP_SHORT.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 					ComboManager.consumeTeleport(player.getUUID());
 					return;
 				}
@@ -577,7 +623,8 @@ public class CombatEvent {
 				DMZEvent.PlayerEvasionEvent evasionEvent = new DMZEvent.PlayerEvasionEvent(player, null, 0, kiCost);
 				MinecraftForge.EVENT_BUS.post(evasionEvent);
 
-				if (evasionEvent.isCanceled()) return;
+				if (evasionEvent.isCanceled())
+					return;
 
 				kiCost = evasionEvent.getKiCost();
 				int currentEnergy = data.getResources().getCurrentEnergy();
@@ -591,16 +638,19 @@ public class CombatEvent {
 							SoundSource.PLAYERS,
 							1.0F,
 							1.2F + player.getRandom().nextFloat() * 0.2F);
-					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), "evasion", 0), player);
+					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), "evasion", 0),
+							player);
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 					return;
 				}
 			}
 
-			boolean canDoubleDash = isDoubleDash && data.getCooldowns().hasCooldown(Cooldowns.DASH_ACTIVE) && !data.getCooldowns().hasCooldown(Cooldowns.DOUBLEDASH_CD);
+			boolean canDoubleDash = isDoubleDash && data.getCooldowns().hasCooldown(Cooldowns.DASH_ACTIVE)
+					&& !data.getCooldowns().hasCooldown(Cooldowns.DOUBLEDASH_CD);
 			boolean canNormalDash = !isDoubleDash && !data.getCooldowns().hasCooldown(Cooldowns.DASH_CD);
 
-			if (!canDoubleDash && !canNormalDash) return;
+			if (!canDoubleDash && !canNormalDash)
+				return;
 
 			double baseDistance = 4.0;
 			double speedMultiplier = player.getAttributeValue(Attributes.MOVEMENT_SPEED) / 0.1;
@@ -621,12 +671,15 @@ public class CombatEvent {
 
 			DMZEvent.PlayerDashEvent dashEvent = new DMZEvent.PlayerDashEvent(player, dashType, distance, kiCost);
 			MinecraftForge.EVENT_BUS.post(dashEvent);
-			if (dashEvent.isCanceled()) return;
+			if (dashEvent.isCanceled())
+				return;
 			distance = dashEvent.getDistance();
 			kiCost = dashEvent.getKiCost();
 			int currentEnergy = data.getResources().getCurrentEnergy();
-			if (currentEnergy < kiCost) return;
-			if (player.getFoodData().getFoodLevel() <= 3) return;
+			if (currentEnergy < kiCost)
+				return;
+			if (player.getFoodData().getFoodLevel() <= 3)
+				return;
 			data.getResources().addEnergy(-kiCost);
 
 			Vec3 forward = Vec3.directionFromRotation(0, player.getYRot()).normalize();
@@ -639,17 +692,16 @@ public class CombatEvent {
 			player.setDeltaMovement(player.getDeltaMovement().add(velocity.x, yVel, velocity.z));
 			player.hurtMarked = true;
 
-            if (player.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-                serverLevel.sendParticles(
-                        net.minecraft.core.particles.ParticleTypes.EXPLOSION,
-                        player.getX(), player.getY() + 0.5, player.getZ(),
-                        1,
-                        0.0,
-                        0.0,
-                        0.0,
-                        0.0
-                );
-            }
+			if (player.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+				serverLevel.sendParticles(
+						net.minecraft.core.particles.ParticleTypes.EXPLOSION,
+						player.getX(), player.getY() + 0.5, player.getZ(),
+						1,
+						0.0,
+						0.0,
+						0.0,
+						0.0);
+			}
 
 			int dashCdSeconds = ConfigManager.getServerConfig().getCombat().getDashCooldownSeconds();
 			int doubleDashCdSeconds = ConfigManager.getServerConfig().getCombat().getDoubleDashCooldownSeconds();
@@ -661,29 +713,39 @@ public class CombatEvent {
 				data.getCooldowns().setCooldown(Cooldowns.DOUBLEDASH_CD, doubleDashCdTicks);
 				data.getCooldowns().removeCooldown(Cooldowns.DASH_ACTIVE);
 				player.addEffect(new MobEffectInstance(MainEffects.DASH_CD.get(), dashCdTicks, 0, false, false, true));
-				player.addEffect(new MobEffectInstance(MainEffects.DOUBLEDASH_CD.get(), doubleDashCdTicks, 0, false, false, true));
+				player.addEffect(new MobEffectInstance(MainEffects.DOUBLEDASH_CD.get(), doubleDashCdTicks, 0, false,
+						false, true));
 			} else {
 				data.getCooldowns().setCooldown(Cooldowns.DASH_CD, dashCdTicks);
 				data.getCooldowns().setCooldown(Cooldowns.DASH_ACTIVE, 15);
 				player.addEffect(new MobEffectInstance(MainEffects.DASH_CD.get(), dashCdTicks, 0, false, false, true));
 			}
 
-			player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.5F, 1.5F + player.getRandom().nextFloat() * 0.3F);
+			player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP,
+					SoundSource.PLAYERS, 0.5F, 1.5F + player.getRandom().nextFloat() * 0.3F);
 
 			int dashDirection = getDashDirectionFromInput(xInput, zInput);
-			if (canDoubleDash) dashDirection += 4;
-			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), "dash", dashDirection, player.getId()), player);
+			if (canDoubleDash)
+				dashDirection += 4;
+			NetworkHandler.sendToTrackingEntityAndSelf(
+					new TriggerAnimationS2C(player.getUUID(), "dash", dashDirection, player.getId()), player);
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 		});
 	}
 
 	private static int getDashDirectionFromInput(float xInput, float zInput) {
-		if (zInput > 0 && xInput == 0) return 1;
-		if (zInput < 0 && xInput == 0) return 2;
-		if (xInput < 0 && zInput == 0) return 4;
-		if (xInput > 0 && zInput == 0) return 3;
-		if (zInput > 0) return 1;
-		if (zInput < 0) return 2;
+		if (zInput > 0 && xInput == 0)
+			return 1;
+		if (zInput < 0 && xInput == 0)
+			return 2;
+		if (xInput < 0 && zInput == 0)
+			return 4;
+		if (xInput > 0 && zInput == 0)
+			return 3;
+		if (zInput > 0)
+			return 1;
+		if (zInput < 0)
+			return 2;
 		return 1;
 	}
 }
