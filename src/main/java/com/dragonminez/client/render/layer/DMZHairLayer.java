@@ -66,7 +66,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			factor = 1.0f;
 			lastHairProgress = 1.0f;
 			if (character.getActiveForm().contains("oozaru")) return;
-		} else if (stats.getStatus().isActionCharging() && stats.getStatus().getSelectedAction() == ActionMode.FORM) {
+		} else if (stats.getStatus().isActionCharging() && (stats.getStatus().getSelectedAction() == ActionMode.FORM || stats.getStatus().getSelectedAction() == ActionMode.GODFORMS)) {
 			String targetGroup = character.getSelectedFormGroup();
 			var nextForm = TransformationsHelper.getNextAvailableForm(stats);
 			if (nextForm != null) {

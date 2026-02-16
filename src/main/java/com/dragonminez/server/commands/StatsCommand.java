@@ -15,6 +15,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -38,6 +39,13 @@ public class StatsCommand {
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("dmzstats")
 				.requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_INFO_SELF, DMZPermissions.STATS_INFO_OTHERS))
+
+				// info [target]
+				.then(Commands.literal("info")
+						.executes(ctx -> sendStatsInfo(ctx.getSource(), ctx.getSource().getPlayerOrException()))
+						.then(Commands.argument("target", EntityArgument.player())
+								.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_INFO_OTHERS))
+								.executes(ctx -> sendStatsInfo(ctx.getSource(), EntityArgument.getPlayer(ctx, "target")))))
 
 				// set <stat> <value> [targets]
 				.then(Commands.literal("set")
@@ -82,6 +90,52 @@ public class StatsCommand {
 								.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_RESET_OTHERS))
 								.executes(ctx -> resetStats(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), null))))
 		);
+	}
+
+	private static int sendStatsInfo(CommandSourceStack source, ServerPlayer player) {
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.header", player.getName().getString()).withStyle(ChatFormatting.GOLD), false);
+			
+			// Base Stats
+			var stats = data.getStats();
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.stats", 
+					stats.getStrength(), stats.getStrikePower(), stats.getResistance(), 
+					stats.getVitality(), stats.getKiPower(), stats.getEnergy()).withStyle(ChatFormatting.GRAY), false);
+			
+			// TP
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.tp", data.getResources().getTrainingPoints()).withStyle(ChatFormatting.GREEN), false);
+
+			// Skills
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.skills_header").withStyle(ChatFormatting.GOLD), false);
+			String[] trackedSkills = {"superform", "godform", "legendaryforms", "ultrainstinct", "kaioken"};
+			for (String sName : trackedSkills) {
+				if (data.getSkills().hasSkill(sName)) {
+					int lvl = data.getSkills().getSkillLevel(sName);
+					int maxLvl = data.getSkills().getMaxSkillLevel(sName);
+					source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.skill_item", sName, lvl, maxLvl).withStyle(ChatFormatting.GRAY), false);
+				}
+			}
+
+			// Masteries
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.masteries_header").withStyle(ChatFormatting.GOLD), false);
+			var masteries = data.getCharacter().getFormMasteries();
+			
+			// Show UI Mastery separately if learned
+			if (data.getSkills().getSkillLevel("ultrainstinct") >= 1) {
+				double uiMastery = masteries.getMastery("special", "ultrainstinct");
+				source.sendSuccess(() -> Component.literal("§7- Ultra Instinct Mastery: §d" + String.format("%.2f", uiMastery) + "%"), false);
+			}
+
+			if (data.getCharacter().hasActiveForm()) {
+				String group = data.getCharacter().getActiveFormGroup();
+				String name = data.getCharacter().getActiveForm();
+				double val = masteries.getMastery(group, name);
+				source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.mastery_item", name, String.format("%.2f", val)).withStyle(ChatFormatting.LIGHT_PURPLE), false);
+			} else {
+				source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.no_mastery").withStyle(ChatFormatting.GRAY), false);
+			}
+		});
+		return 1;
 	}
 
 	private static int modifyStats(CommandSourceStack source, String stat, String amountStr, Collection<ServerPlayer> targets, String mode) {

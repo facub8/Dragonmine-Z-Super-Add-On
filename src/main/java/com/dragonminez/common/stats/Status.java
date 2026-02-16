@@ -32,6 +32,7 @@ public class Status {
 	private String backWeapon;
 	private String scouterItem;
 	private String pothalaColor;
+	private boolean isUltraInstinctActive;
 
     public Status() {
         this.isAlive = true;
@@ -61,6 +62,7 @@ public class Status {
 		this.backWeapon = "";
 		this.scouterItem = "";
 		this.pothalaColor = "";
+		this.isUltraInstinctActive = false;
     }
 
     public boolean isAlive() { return isAlive; }
@@ -90,6 +92,7 @@ public class Status {
 	public String getBackWeapon() { return backWeapon; }
 	public String getScouterItem() { return scouterItem; }
 	 public String getPothalaColor() { return pothalaColor; }
+	public boolean isUltraInstinctActive() { return isUltraInstinctActive; }
 
     public void setAlive(boolean alive) { this.isAlive = alive; }
     public void setCreatedCharacter(boolean created) { this.hasCreatedCharacter = created; }
@@ -118,6 +121,7 @@ public class Status {
 	public void setBackWeapon(String weapon) { this.backWeapon = weapon; }
 	public void setScouterItem(String item) { this.scouterItem = item; }
 	public void setPothalaColor(String color) { this.pothalaColor = color; }
+	public void setUltraInstinctActive(boolean active) { this.isUltraInstinctActive = active; }
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
@@ -146,6 +150,7 @@ public class Status {
 		tag.putBoolean("AndroidUpgraded", androidUpgraded);
 		tag.putBoolean("RenderKatana", renderKatana);
 		tag.putString("BackWeapon", backWeapon);
+		tag.putBoolean("IsUltraInstinctActive", isUltraInstinctActive);
         return tag;
     }
 
@@ -178,6 +183,7 @@ public class Status {
 		this.androidUpgraded = tag.getBoolean("AndroidUpgraded");
 		this.renderKatana = tag.getBoolean("RenderKatana");
 		this.backWeapon = tag.getString("BackWeapon");
+		this.isUltraInstinctActive = tag.getBoolean("IsUltraInstinctActive");
     }
 
     public void copyFrom(Status other) {
@@ -206,6 +212,7 @@ public class Status {
 		this.androidUpgraded = other.androidUpgraded;
 		this.renderKatana = other.renderKatana;
 		this.backWeapon = other.backWeapon;
+		this.isUltraInstinctActive = other.isUltraInstinctActive;
     }
 }
 

@@ -44,6 +44,9 @@ public class ExecuteActionC2S {
 							if (data.getSkills().isSkillActive("kaioken") && data.getStatus().getActiveKaiokenPhase() != 0) {
 								if (data.getStatus().getActiveKaiokenPhase() <= 0 || data.getStatus().getActiveKaiokenPhase() - 1 <= 0) data.getSkills().setSkillActive("kaioken", false);
 								data.getStatus().setActiveKaiokenPhase(data.getStatus().getActiveKaiokenPhase() - 1);
+							} else if (data.getStatus().isUltraInstinctActive() && data.getStatus().getSelectedAction() == ActionMode.ULTRA_INSTINCT) {
+								data.getStatus().setUltraInstinctActive(false);
+								player.displayClientMessage(Component.translatable("message.dragonminez.ultrainstinct.deactivate"), true);
 							} else if (TransformationsHelper.canDescend(data)) {
 								FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
 								if (previousForm != null) {

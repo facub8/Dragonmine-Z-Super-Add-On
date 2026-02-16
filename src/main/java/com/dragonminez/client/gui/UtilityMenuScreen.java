@@ -10,6 +10,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.TransformationsHelper;
+import com.dragonminez.common.util.lists.SaiyanForms;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.ChatFormatting;
@@ -80,6 +81,7 @@ public class UtilityMenuScreen extends Screen {
 		};
 
 		for (int i = 0; i < 8; i++) {
+			if (i == 4) continue; // Skip God Forms dedicated slot
 			int col = positions[i][0];
 			int row = positions[i][1];
 
@@ -125,6 +127,16 @@ public class UtilityMenuScreen extends Screen {
 					line2 = Component.translatable("gui.action.dragonminez." + (statsData.getStatus().getSelectedAction() == ActionMode.FUSION ? "true" : "false"));
 					isSelected = currentMode == ActionMode.FUSION;
 				}
+			}
+			case 3 -> {
+				if (statsData.getSkills().getSkillLevel("ultrainstinct") >= 1) {
+					line1 = Component.translatable("gui.action.dragonminez.ultrainstinct").withStyle(ChatFormatting.BOLD);
+					line2 = Component.translatable("gui.action.dragonminez." + (statsData.getStatus().getSelectedAction() == ActionMode.ULTRA_INSTINCT ? "true" : "false"));
+					isSelected = currentMode == ActionMode.ULTRA_INSTINCT;
+				}
+			}
+			case 4 -> {
+				// Removed: God Forms now handled in Slot 1 cycle
 			}
 			case 5 -> {
 				if (statsData.getSkills().hasSkill("kimanipulation") && statsData.getSkills().hasSkill("kicontrol")) {
@@ -173,6 +185,7 @@ public class UtilityMenuScreen extends Screen {
 		};
 
 		for (int i = 0; i < 8; i++) {
+			if (i == 4) continue;
 			int col = positions[i][0];
 			int row = positions[i][1];
 
@@ -222,6 +235,16 @@ public class UtilityMenuScreen extends Screen {
 					NetworkHandler.sendToServer(new SwitchActionC2S(ActionMode.FUSION));
 					playToggleSound(mc, !wasActive);
 				}
+			}
+			case 3 -> {
+				if (statsData.getSkills().getSkillLevel("ultrainstinct") >= 1) {
+					boolean wasActive = statsData.getStatus().getSelectedAction() == ActionMode.ULTRA_INSTINCT;
+					NetworkHandler.sendToServer(new SwitchActionC2S(ActionMode.ULTRA_INSTINCT));
+					playToggleSound(mc, !wasActive);
+				}
+			}
+			case 4 -> {
+				// Slot removed
 			}
 			case 5 -> {
 				if (statsData.getSkills().hasSkill("kimanipulation") && statsData.getSkills().hasSkill("kicontrol")) {

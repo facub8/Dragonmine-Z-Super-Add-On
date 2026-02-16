@@ -6,6 +6,7 @@ import com.dragonminez.common.util.lists.*;
 import com.google.gson.Gson;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -607,12 +608,91 @@ public class DefaultFormsFactory {
         forms.put(SaiyanForms.GROUP_SSGRADES, ssGrades);
         forms.put(SaiyanForms.SUPER_SAIYAN, superSaiyan);
 
+        // God Forms group
+        FormConfig godForms = new FormConfig();
+        godForms.setGroupName(SaiyanForms.GROUP_GOD);
+        godForms.setFormType("god");
+
+        FormConfig.FormData ssg = new FormConfig.FormData();
+        ssg.setName(SaiyanForms.SUPER_SAIYAN_GOD);
+        ssg.setUnlockOnSkillLevel(1);
+        ssg.setCustomModel("");
+        ssg.setHairColor("#FF0000");
+        ssg.setEye1Color("#FF0000");
+        ssg.setEye2Color("#FF0000");
+        ssg.setAuraColor("#FF5100");
+        ssg.setHasLightnings(false);
+        ssg.setLightningColor("");
+        ssg.setBodyColor1("");
+        ssg.setBodyColor2("");
+        ssg.setBodyColor3("");
+        ssg.setModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
+        ssg.setStrMultiplier(3.5);
+        ssg.setSkpMultiplier(3.5);
+        ssg.setStmMultiplier(1.0);
+        ssg.setDefMultiplier(2.5);
+        ssg.setVitMultiplier(1.0);
+        ssg.setPwrMultiplier(3.5);
+        ssg.setEneMultiplier(1.0);
+        ssg.setSpeedMultiplier(1.1);
+        ssg.setEnergyDrain(0.20);
+        ssg.setStaminaDrain(1.0);
+        ssg.setAttackSpeed(1.0);
+        ssg.setHairType("base");
+        ssg.setForcedHairCode("");
+        setDefaultMasteryValues(ssg);
+        ssg.setKaiokenStackable(true);
+        ssg.setKaiokenDrainMultiplier(2.5);
+
+        FormConfig.FormData ssb = new FormConfig.FormData();
+        ssb.setName(SaiyanForms.SUPER_SAIYAN_BLUE);
+        ssb.setUnlockOnSkillLevel(3);
+        ssb.setCustomModel("");
+        ssb.setHairColor("#00BFFF");
+        ssb.setEye1Color("#00BFFF");
+        ssb.setEye2Color("#00BFFF");
+        ssb.setAuraColor("#00BFFF");
+        ssb.setHasLightnings(false);
+        ssb.setLightningColor("");
+        ssb.setBodyColor1("");
+        ssb.setBodyColor2("");
+        ssb.setBodyColor3("");
+        ssb.setModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
+        ssb.setStrMultiplier(5.0);
+        ssb.setSkpMultiplier(5.0);
+        ssb.setStmMultiplier(1.0);
+        ssb.setDefMultiplier(3.5);
+        ssb.setVitMultiplier(1.0);
+        ssb.setPwrMultiplier(5.0);
+        ssb.setEneMultiplier(1.0);
+        ssb.setSpeedMultiplier(1.15);
+        ssb.setEnergyDrain(0.40);
+        ssb.setStaminaDrain(1.0);
+        ssb.setAttackSpeed(1.0);
+        ssb.setHairType("ssj");
+        ssb.setForcedHairCode("");
+        setDefaultMasteryValues(ssb);
+        ssb.setKaiokenStackable(true);
+        ssb.setKaiokenDrainMultiplier(3.0);
+
+        Map<String, FormConfig.FormData> godFormData = new LinkedHashMap<>();
+        godFormData.put(SaiyanForms.SUPER_SAIYAN_GOD, ssg);
+        godFormData.put(SaiyanForms.SUPER_SAIYAN_BLUE, ssb);
+        godForms.setForms(godFormData);
+
+        forms.put(SaiyanForms.GROUP_GOD, godForms);
+
         Path oozaruPath = formsPath.resolve(SaiyanForms.OOZARU + ".json");
-        loader.saveConfig(oozaruPath, oozaruForms);
+        if (!Files.exists(oozaruPath)) loader.saveConfig(oozaruPath, oozaruForms);
         Path ssGradesPath = formsPath.resolve(SaiyanForms.GROUP_SSGRADES + ".json");
-        loader.saveConfig(ssGradesPath, ssGrades);
+        if (!Files.exists(ssGradesPath)) loader.saveConfig(ssGradesPath, ssGrades);
         Path superSaiyanPath = formsPath.resolve(SaiyanForms.SUPER_SAIYAN + ".json");
-        loader.saveConfig(superSaiyanPath, superSaiyan);
+        if (!Files.exists(superSaiyanPath)) loader.saveConfig(superSaiyanPath, superSaiyan);
+        Path godFormsPath = formsPath.resolve(SaiyanForms.GROUP_GOD + ".json");
+        if (!Files.exists(godFormsPath)) {
+            loader.saveConfig(godFormsPath, godForms);
+            forms.put(SaiyanForms.GROUP_GOD, godForms);
+        }
         LogUtil.info(Env.COMMON, "Default Super Saiyan forms created");
     }
 

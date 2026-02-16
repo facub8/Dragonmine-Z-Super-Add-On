@@ -31,6 +31,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -43,167 +44,253 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class CombatEvent {
 
 	@SubscribeEvent(priority = EventPriority.HIGH)
+	public static void onLivingAttack(LivingAttackEvent event) {
+		if (event.getEntity().level().isClientSide) return;
+		if (!(event.getEntity() instanceof Player victim)) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
+			if (victimData.getStatus().isUltraInstinctActive()) {
+				DamageSource source = event.getSource();
+				double dodgeChance = victimData.getUltraInstinctDodgeChance();
+				int victimBP = victimData.getBattlePower();
+				int attackerBP = 0;
+
+				if (source.getEntity() instanceof LivingEntity attackerEntity) {
+					if (attackerEntity instanceof Player attackerPlayer) {
+						var attackerCap = attackerPlayer.getCapability(StatsCapability.INSTANCE).resolve();
+						if (attackerCap.isPresent()) {
+							attackerBP = attackerCap.get().getBattlePower();
+						}
+					} else {
+						// Try to get capability from other entities (e.g. modded entities)
+						var attackerCap = attackerEntity.getCapability(StatsCapability.INSTANCE).resolve();
+						if (attackerCap.isPresent()) {
+							attackerBP = attackerCap.get().getBattlePower();
+						} else {
+							// Fallback formula for vanilla mobs or entities without stats
+							double attackDamage = 0;
+							if (attackerEntity.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE)) {
+								attackDamage = attackerEntity.getAttributeValue(Attributes.ATTACK_DAMAGE);
+							}
+							attackerBP = (int) (attackerEntity.getMaxHealth() + attackDamage * 5);
+						}
+					}
+
+					if (attackerBP > victimBP && victimBP > 0) {
+						double ratio = (double) victimBP / attackerBP;
+						dodgeChance *= ratio;
+					} else if (attackerBP < victimBP) {
+						double ratio = (double) victimBP / Math.max(1, attackerBP);
+						if (ratio >= 5.0) {
+							dodgeChance = 1.0; 
+						} else {
+							dodgeChance = Math.min(1.0, dodgeChance + (ratio - 1.0) * 0.2);
+						}
+					}
+				}
+
+				if (victim.getRandom().nextDouble() < dodgeChance) {
+					event.setCanceled(true);
+					victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 1.0F, 1.0F);
+
+					if (victim.level() instanceof ServerLevel serverLevel) {
+						serverLevel.sendParticles(MainParticles.DIVINE.get(), victim.getX(), victim.getY() + 1.0, victim.getZ(), 5, 0.5, 0.5, 0.5, 0.1);
+					}
+
+					if (victim instanceof ServerPlayer serverPlayer) {
+						NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(victim.getUUID(), "evasion", 0, victim.getId()), serverPlayer);
+					}
+					
+					// Force reset hurt values to ensure no visual damage feedback
+					victim.hurtTime = 0;
+					victim.hurtDuration = 0;
+					victim.invulnerableTime = 0;
+
+					victimData.getCharacter().getFormMasteries().addMastery(victimData.getCharacter().getActiveFormGroup(), victimData.getCharacter().getActiveForm(), 0, 0);
+
+					if (attackerBP >= victimBP) {
+						victimData.getCharacter().getFormMasteries().addMastery("special", "ultrainstinct", 0.05, 100.0);
+					}
+
+					// Consume attacker stamina even on dodge
+					if (source.getEntity() instanceof Player attacker && source.getMsgId().equals("player")) {
+						double[] dummyDamage = {event.getAmount()};
+						AtomicBoolean dummyCancel = new AtomicBoolean(false);
+						handleAttackerCombatStats(attacker, victim, dummyDamage, dummyCancel);
+					}
+				}
+			}
+		});
+	}
+
+	private static void handleAttackerCombatStats(Player attacker, Entity target, double[] currentDamage, AtomicBoolean shouldCancel) {
+		if (attacker.hasEffect(MainEffects.STUN.get()) || attacker.isBlocking()) {
+			shouldCancel.set(true);
+			return;
+		}
+
+		StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
+			if (!attackerData.getStatus().hasCreatedCharacter()) return;
+
+			double mcBaseDamage = currentDamage[0];
+			double dmzDamage = attackerData.getMeleeDamage();
+			boolean wantsCombo = ComboManager.isNextHitCombo(attacker.getUUID());
+			ComboManager.setNextHitAsCombo(attacker.getUUID(), false);
+			boolean isCooldownFull = false;
+
+			if (ConfigManager.getServerConfig().getCombat().isRespectAttackCooldown()) {
+				float adjustedStrength = attacker.getAttackStrengthScale(0.5F);
+
+				if (attackerData.getCharacter().hasActiveForm()) {
+					FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
+					if (activeForm != null) {
+						adjustedStrength *= (float) activeForm.getAttackSpeed();
+					}
+				}
+
+				if (adjustedStrength > 1.0F) adjustedStrength = 1.0F;
+				isCooldownFull = adjustedStrength >= 0.9F;
+
+				float damageScale = 0.2F + adjustedStrength * adjustedStrength * 0.8F;
+				dmzDamage *= damageScale;
+			} else {
+				isCooldownFull = true;
+			}
+
+			int baseStaminaRequired = (int) Math.ceil(dmzDamage * ConfigManager.getServerConfig().getCombat().getStaminaConsumptionRatio());
+			double gravityMult = GravityLogic.getConsumptionMultiplier(attacker);
+			baseStaminaRequired = (int) (baseStaminaRequired * gravityMult);
+			double staminaDrainMultiplier = attackerData.getAdjustedStaminaDrain();
+			int staminaRequired = (int) Math.ceil(baseStaminaRequired * staminaDrainMultiplier);
+			int currentStamina = attackerData.getResources().getCurrentStamina();
+
+			if (wantsCombo) {
+				if (isCooldownFull) {
+					dmzDamage = attackerData.getStrikeDamage();
+					int currentCombo = ComboManager.getCombo(attacker.getUUID());
+					
+					if (currentCombo > 0 && !ComboManager.shouldContinueCombo(attacker.getUUID(), target)) currentCombo = 0;
+
+					int nextCombo = (currentCombo % 4) + 1;
+					ComboManager.setCombo(attacker.getUUID(), nextCombo);
+					ComboManager.registerHit(attacker.getUUID(), target);
+
+					double dmgBonus = 1.0 + (0.03 * nextCombo);
+					dmzDamage *= dmgBonus;
+					staminaRequired = (int) (staminaRequired * 1.25);
+
+					if (attacker instanceof ServerPlayer serverPlayer) {
+						NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), "combo", nextCombo), serverPlayer);
+					}
+
+					attacker.level().playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(), MainSounds.CRITICO1.get(), SoundSource.PLAYERS, 0.5F, 1.0F + (nextCombo * 0.1F));
+
+					if (nextCombo == 4) {
+						Vec3 look = attacker.getLookAngle();
+						target.setDeltaMovement(look.x * 3.0, 0.5, look.z * 3.0);
+						target.hurtMarked = true;
+						ComboManager.enableTeleportWindow(attacker.getUUID(), target.getId());
+						attacker.level().playSound(null, target.getX(), target.getY(), target.getZ(), MainSounds.CRITICO2.get(), SoundSource.PLAYERS, 0.8f, 1.0f);
+						ComboManager.resetCombo(attacker.getUUID());
+						attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
+					}
+				} else {
+					ComboManager.resetCombo(attacker.getUUID());
+					attacker.level().playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.5F, 1.5F);
+					attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
+				}
+			} else {
+				ComboManager.resetCombo(attacker.getUUID());
+				attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
+			}
+
+			double finalDmzDamage;
+			if (currentStamina >= staminaRequired) {
+				finalDmzDamage = dmzDamage;
+				if (!attacker.isCreative()) attackerData.getResources().removeStamina(staminaRequired);
+			} else {
+				double staminaRatio = (double) currentStamina / staminaRequired;
+				finalDmzDamage = dmzDamage * staminaRatio;
+				if (!attacker.isCreative()) attackerData.getResources().setCurrentStamina(0);
+			}
+
+			if (attackerData.getCharacter().hasActiveForm()) {
+				FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
+				if (activeForm != null) {
+					String formGroup = attackerData.getCharacter().getActiveFormGroup();
+					String formName = attackerData.getCharacter().getActiveForm();
+					attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerHit(), activeForm.getMaxMastery());
+				}
+			}
+
+			if (isEmptyHandOrNoDamageItem(attacker)) {
+				currentDamage[0] = finalDmzDamage;
+			} else {
+				currentDamage[0] = mcBaseDamage + finalDmzDamage;
+			}
+
+			boolean kiWeaponActive = attackerData.getSkills().isSkillActive("kimanipulation");
+
+			if (kiWeaponActive) {
+				String weaponType = attackerData.getStatus().getKiWeaponType();
+				int kiCost = 0;
+				switch (weaponType.toLowerCase()) {
+					case "blade" -> {
+						kiCost = (int) Math.round(attackerData.getMaxEnergy() * ConfigManager.getServerConfig().getCombat().getKiBladeConfig()[1]);
+						if (attackerData.getResources().getCurrentEnergy() >= kiCost) {
+							currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getServerConfig().getCombat().getKiBladeConfig()[0];
+						}
+					}
+					case "scythe" -> {
+						kiCost = (int) Math.round(attackerData.getMaxEnergy() * ConfigManager.getServerConfig().getCombat().getKiScytheConfig()[1]);
+						if (attackerData.getResources().getCurrentEnergy() >= kiCost) {
+							currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getServerConfig().getCombat().getKiScytheConfig()[0];
+						}
+					}
+					case "clawlance" -> {
+						kiCost = (int) Math.round(attackerData.getMaxEnergy() * ConfigManager.getServerConfig().getCombat().getKiClawLanceConfig()[1]);
+						if (attackerData.getResources().getCurrentEnergy() >= kiCost) {
+							currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getServerConfig().getCombat().getKiClawLanceConfig()[0];
+						}
+					}
+				}
+
+				if (!attacker.isCreative() && !(target instanceof PunchMachineEntity)) attackerData.getResources().removeEnergy(kiCost);
+			}
+
+			if (attacker instanceof ServerPlayer serverPlayer) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+
+			if (target instanceof Player) {
+				if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout()) attackerData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
+			}
+
+			if (target instanceof PunchMachineEntity punchMachineEntity) {
+				punchMachineEntity.processHit((float) currentDamage[0], attacker);
+				int baseTps = ConfigManager.getServerConfig().getGameplay().getTpPerHit();
+				attackerData.getResources().addTrainingPoints(baseTps);
+				shouldCancel.set(true);
+				currentDamage[0] = 0;
+			}
+		});
+	}
+
+	@SubscribeEvent(priority = EventPriority.HIGH)
 	public static void onLivingHurt(LivingHurtEvent event) {
 		DamageSource source = event.getSource();
 		final double[] currentDamage = {event.getAmount()};
 
 		// Attacker Damage Event
 		if (source.getEntity() instanceof Player attacker && source.getMsgId().equals("player")) {
-			if (attacker.hasEffect(MainEffects.STUN.get()) || attacker.isBlocking()) {
+			AtomicBoolean shouldCancel = new AtomicBoolean(false);
+			handleAttackerCombatStats(attacker, event.getEntity(), currentDamage, shouldCancel);
+			
+			if (shouldCancel.get()) {
 				event.setCanceled(true);
+				event.setAmount(0);
 				return;
 			}
-
-			boolean isPunchMachine = event.getEntity() instanceof PunchMachineEntity;
-
-			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
-				if (!attackerData.getStatus().hasCreatedCharacter()) return;
-
-				double mcBaseDamage = currentDamage[0];
-				double dmzDamage = attackerData.getMeleeDamage();
-				boolean wantsCombo = ComboManager.isNextHitCombo(attacker.getUUID());
-				ComboManager.setNextHitAsCombo(attacker.getUUID(), false);
-				boolean isCooldownFull = false;
-
-				if (ConfigManager.getServerConfig().getCombat().isRespectAttackCooldown()) {
-					float adjustedStrength = attacker.getAttackStrengthScale(0.5F);
-
-					if (attackerData.getCharacter().hasActiveForm()) {
-						FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
-						if (activeForm != null) {
-							adjustedStrength *= (float) activeForm.getAttackSpeed();
-						}
-					}
-
-					if (adjustedStrength > 1.0F) adjustedStrength = 1.0F;
-					isCooldownFull = adjustedStrength >= 0.9F;
-
-					float damageScale = 0.2F + adjustedStrength * adjustedStrength * 0.8F;
-					dmzDamage *= damageScale;
-				} else {
-					isCooldownFull = true;
-				}
-
-				int baseStaminaRequired = (int) Math.ceil(dmzDamage * ConfigManager.getServerConfig().getCombat().getStaminaConsumptionRatio());
-				double gravityMult = GravityLogic.getConsumptionMultiplier(attacker);
-				baseStaminaRequired = (int) (baseStaminaRequired * gravityMult);
-				double staminaDrainMultiplier = attackerData.getAdjustedStaminaDrain();
-				int staminaRequired = (int) Math.ceil(baseStaminaRequired * staminaDrainMultiplier);
-				int currentStamina = attackerData.getResources().getCurrentStamina();
-
-				if (wantsCombo) {
-					if (isCooldownFull) {
-						dmzDamage = attackerData.getStrikeDamage();
-						int currentCombo = ComboManager.getCombo(attacker.getUUID());
-						Entity target = event.getEntity();
-						if (currentCombo > 0 && !ComboManager.shouldContinueCombo(attacker.getUUID(), target)) currentCombo = 0;
-
-
-						int nextCombo = (currentCombo % 4) + 1;
-						ComboManager.setCombo(attacker.getUUID(), nextCombo);
-						ComboManager.registerHit(attacker.getUUID(), target);
-
-						double dmgBonus = 1.0 + (0.03 * nextCombo);
-						dmzDamage *= dmgBonus;
-						staminaRequired = (int) (staminaRequired * 1.25);
-
-						if (attacker instanceof ServerPlayer serverPlayer) {
-							NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), "combo", nextCombo), serverPlayer);
-						}
-
-						attacker.level().playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(), MainSounds.CRITICO1.get(), SoundSource.PLAYERS, 0.5F, 1.0F + (nextCombo * 0.1F));
-
-						if (nextCombo == 4) {
-							Entity victim = event.getEntity();
-							Vec3 look = attacker.getLookAngle();
-							victim.setDeltaMovement(look.x * 3.0, 0.5, look.z * 3.0);
-							victim.hurtMarked = true;
-							ComboManager.enableTeleportWindow(attacker.getUUID(), victim.getId());
-							attacker.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.CRITICO2.get(), SoundSource.PLAYERS, 0.8f, 1.0f);
-							ComboManager.resetCombo(attacker.getUUID());
-							attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
-						}
-					} else {
-						ComboManager.resetCombo(attacker.getUUID());
-						attacker.level().playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.5F, 1.5F);
-						attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
-					}
-				} else {
-					ComboManager.resetCombo(attacker.getUUID());
-					attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
-				}
-
-				double finalDmzDamage;
-				if (currentStamina >= staminaRequired) {
-					finalDmzDamage = dmzDamage;
-					if (!attacker.isCreative()) attackerData.getResources().removeStamina(staminaRequired);
-				} else {
-					double staminaRatio = (double) currentStamina / staminaRequired;
-					finalDmzDamage = dmzDamage * staminaRatio;
-					if (!attacker.isCreative()) attackerData.getResources().setCurrentStamina(0);
-				}
-
-				if (attackerData.getCharacter().hasActiveForm()) {
-					FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
-					if (activeForm != null) {
-						String formGroup = attackerData.getCharacter().getActiveFormGroup();
-						String formName = attackerData.getCharacter().getActiveForm();
-						attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerHit(), activeForm.getMaxMastery());
-					}
-				}
-
-				if (isEmptyHandOrNoDamageItem(attacker)) {
-					currentDamage[0] = finalDmzDamage;
-				} else {
-					currentDamage[0] = mcBaseDamage + finalDmzDamage;
-				}
-
-				boolean kiWeaponActive = attackerData.getSkills().isSkillActive("kimanipulation");
-
-				if (kiWeaponActive) {
-					String weaponType = attackerData.getStatus().getKiWeaponType();
-					int kiCost = 0;
-					switch (weaponType.toLowerCase()) {
-						case "blade" -> {
-							kiCost = (int) Math.round(attackerData.getMaxEnergy() * ConfigManager.getServerConfig().getCombat().getKiBladeConfig()[1]);
-							if (attackerData.getResources().getCurrentEnergy() >= kiCost) {
-								currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getServerConfig().getCombat().getKiBladeConfig()[0];
-							}
-						}
-						case "scythe" -> {
-							kiCost = (int) Math.round(attackerData.getMaxEnergy() * ConfigManager.getServerConfig().getCombat().getKiScytheConfig()[1]);
-							if (attackerData.getResources().getCurrentEnergy() >= kiCost) {
-								currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getServerConfig().getCombat().getKiScytheConfig()[0];
-							}
-						}
-						case "clawlance" -> {
-							kiCost = (int) Math.round(attackerData.getMaxEnergy() * ConfigManager.getServerConfig().getCombat().getKiClawLanceConfig()[1]);
-							if (attackerData.getResources().getCurrentEnergy() >= kiCost) {
-								currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getServerConfig().getCombat().getKiClawLanceConfig()[0];
-							}
-						}
-					}
-
-					if (!attacker.isCreative() || !isPunchMachine) attackerData.getResources().removeEnergy(kiCost);
-				}
-
-				if (attacker instanceof ServerPlayer serverPlayer) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
-
-				if (event.getEntity() instanceof Player) {
-					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout()) attackerData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
-				}
-
-				if (event.getEntity() instanceof PunchMachineEntity punchMachineEntity) {
-					punchMachineEntity.processHit((float) currentDamage[0], attacker);
-					int baseTps = ConfigManager.getServerConfig().getGameplay().getTpPerHit();
-					attackerData.getResources().addTrainingPoints(baseTps);
-					event.setCanceled(true);
-					event.setAmount(0);
-					return;
-				}
-
-				event.setAmount((float) currentDamage[0]);
-			});
+			
+			event.setAmount((float) currentDamage[0]);
 		}
 
 		// Victim Defense Event
@@ -213,6 +300,8 @@ public class CombatEvent {
 					victimData.getStatus().setLastHurtTime(System.currentTimeMillis());
 					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout())
 						victimData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
+
+
 					double defense = victimData.getDefense();
 					boolean blocked = false;
 

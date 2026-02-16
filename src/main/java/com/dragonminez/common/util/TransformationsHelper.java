@@ -3,6 +3,7 @@ package com.dragonminez.common.util;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.util.lists.SaiyanForms;
 
 import java.util.*;
 
@@ -63,10 +64,14 @@ public class TransformationsHelper {
 	}
 
 	public static FormConfig.FormData getNextAvailableForm(StatsData statsData) {
+		return getNextAvailableForm(statsData, null);
+	}
+
+	public static FormConfig.FormData getNextAvailableForm(StatsData statsData, String groupOverride) {
 		String race = statsData.getCharacter().getRaceName();
-		String group = statsData.getCharacter().hasActiveForm() ?
+		String group = groupOverride != null ? groupOverride : (statsData.getCharacter().hasActiveForm() ?
 				statsData.getCharacter().getActiveFormGroup() :
-				statsData.getCharacter().getSelectedFormGroup();
+				statsData.getCharacter().getSelectedFormGroup());
 
 		if (group == null || group.isEmpty()) return null;
 
@@ -85,7 +90,7 @@ public class TransformationsHelper {
 
 		for (Map.Entry<String, FormConfig.FormData> entry : config.getForms().entrySet()) {
 			if (!foundCurrent) {
-				if (entry.getKey().equalsIgnoreCase(currentFormName)) {
+						if (entry.getKey().equalsIgnoreCase(currentFormName)) {
 					foundCurrent = true;
 				}
 				continue;
@@ -94,7 +99,13 @@ public class TransformationsHelper {
 			int reqLevel = entry.getValue().getUnlockOnSkillLevel();
 			int myLevel = getSkillLevelForType(statsData, config.getFormType());
 
-			if (reqLevel <= myLevel) return entry.getValue();
+			if (reqLevel <= myLevel) {
+				String formName = entry.getValue().getName();
+				if ((formName.equalsIgnoreCase(SaiyanForms.OOZARU) || formName.equalsIgnoreCase(SaiyanForms.GOLDEN_OOZARU)) && !statsData.getStatus().isTailVisible()) {
+					continue;
+				}
+				return entry.getValue();
+			}
 		}
 		return null;
 	}
@@ -183,6 +194,15 @@ public class TransformationsHelper {
 		}
 
 		return false;
+	}
+
+	public static boolean canStackUltraInstinct(StatsData data) {
+		if (data.getSkills().getSkillLevel("ultrainstinct") <= 0) return false;
+		if (!data.getCharacter().hasActiveForm()) return true;
+
+		// For now, allow stacking with any form if the user has the skill.
+		// Balancing is handled by Physical Exhaustion rate in StatsData.
+		return true;
 	}
 
 	public static int getMaxKaiokenPhase(int skillLevel) {

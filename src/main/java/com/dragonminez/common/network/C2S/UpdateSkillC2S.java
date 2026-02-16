@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.Skill;
@@ -52,6 +53,14 @@ public class UpdateSkillC2S {
 							break;
 
 						case "upgrade":
+                            if ("godform".equalsIgnoreCase(skillName)) {
+                                var raceConfig = ConfigManager.getRaceCharacter(data.getCharacter().getRaceName());
+                                int[] superformCosts = raceConfig.getSuperformTpCost();
+                                int realSuperMax = (superformCosts != null) ? superformCosts.length : 0;
+                                int superLevel = data.getSkills().getSkillLevel("superform");
+                                if (superLevel < realSuperMax) break;
+                            }
+
 							if (skill != null && !skill.isMaxLevel()) {
 								if (data.getResources().getTrainingPoints() >= cost) {
 									data.getResources().removeTrainingPoints(cost);

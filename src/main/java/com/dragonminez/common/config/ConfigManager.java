@@ -97,15 +97,42 @@ public class ConfigManager {
         Path skillsConfigPath = CONFIG_DIR.resolve("skills.json");
         if (Files.exists(skillsConfigPath)) {
             skillsConfig = LOADER.loadConfig(skillsConfigPath, SkillsConfig.class);
+            // Merge defaults to ensure new skills are added
+            SkillsConfig defaults = new SkillsConfig(); // Constructor calls createDefaults()
+            boolean updated = false;
+            for (Map.Entry<String, SkillsConfig.SkillCosts> entry : defaults.getSkills().entrySet()) {
+                if (!skillsConfig.getSkills().containsKey(entry.getKey())) {
+                    skillsConfig.getSkills().put(entry.getKey(), entry.getValue());
+                    updated = true;
+                }
+            }
+            if (updated) {
+                LOADER.saveConfig(skillsConfigPath, skillsConfig);
+                LogUtil.info(Env.COMMON, "Updated skills configuration with new defaults");
+            }
         } else {
-			try {
-				LOADER.saveDefaultFromTemplate(skillsConfigPath, "skills.json");
-				skillsConfig = LOADER.loadConfig(skillsConfigPath, SkillsConfig.class);
-			} catch (Exception e) {
-				skillsConfig = new SkillsConfig();
-				LOADER.saveConfig(skillsConfigPath, skillsConfig);
-				LogUtil.error(Env.COMMON, "Error creating skills configuration from template, created default instead: {}");
-			}
+            try {
+                // If template exists, use it, otherwise create fresh
+                LOADER.saveDefaultFromTemplate(skillsConfigPath, "skills.json");
+                skillsConfig = LOADER.loadConfig(skillsConfigPath, SkillsConfig.class);
+                
+                // Double check if template was older than code defaults
+                SkillsConfig defaults = new SkillsConfig();
+                 boolean updated = false;
+                for (Map.Entry<String, SkillsConfig.SkillCosts> entry : defaults.getSkills().entrySet()) {
+                    if (!skillsConfig.getSkills().containsKey(entry.getKey())) {
+                        skillsConfig.getSkills().put(entry.getKey(), entry.getValue());
+                        updated = true;
+                    }
+                }
+                 if (updated) {
+                    LOADER.saveConfig(skillsConfigPath, skillsConfig);
+                }
+            } catch (Exception e) {
+                skillsConfig = new SkillsConfig(); // createDefaults() called in constructor
+                LOADER.saveConfig(skillsConfigPath, skillsConfig);
+                LogUtil.error(Env.COMMON, "Error creating skills configuration from template, created default instead: {}", e.getMessage());
+            }
         }
 
         Path entitiesConfigPath = CONFIG_DIR.resolve("entities.json");
@@ -260,7 +287,7 @@ public class ConfigManager {
 
         Map<String, FormConfig> raceForms = LOADER.loadRaceForms(raceName, formsPath);
 
-        if (isDefault && !LOADER.hasExistingFiles(formsPath)) {
+        if (isDefault) {
             FORMS_FACTORY.createDefaultFormsForRace(raceName, formsPath, raceForms);
         }
 
@@ -346,7 +373,7 @@ public class ConfigManager {
         config.setDefaultAuraColor("#7FFFFF");
 
         config.setSuperformTpCost(new int[]{20000, 40000, 60000, 80000, 100000, 120000, 140000, 160000});
-        config.setGodformTpCost(new int[]{});
+        config.setGodformTpCost(new int[]{0, 100000, 110000, 200000, 300000});
         config.setLegendaryformsTpCost(new int[]{});
     }
 
@@ -535,22 +562,21 @@ public class ConfigManager {
             updated = true;
         }
 
-        if (existing.getSuperformTpCost() == null && defaults.getSuperformTpCost() != null) {
+        if ((existing.getSuperformTpCost() == null || existing.getSuperformTpCost().length == 0) && defaults.getSuperformTpCost() != null) {
             existing.setSuperformTpCost(defaults.getSuperformTpCost());
             updated = true;
         }
-
-        if (existing.getGodformTpCost() == null && defaults.getGodformTpCost() != null) {
+        if ((existing.getGodformTpCost() == null || existing.getGodformTpCost().length == 0) && defaults.getGodformTpCost() != null) {
             existing.setGodformTpCost(defaults.getGodformTpCost());
             updated = true;
         }
 
-        if (existing.getLegendaryformsTpCost() == null && defaults.getLegendaryformsTpCost() != null) {
+        if ((existing.getLegendaryformsTpCost() == null || existing.getLegendaryformsTpCost().length == 0) && defaults.getLegendaryformsTpCost() != null) {
             existing.setLegendaryformsTpCost(defaults.getLegendaryformsTpCost());
             updated = true;
         }
 
-        if (existing.getAndroidformsTpCost() == null && defaults.getAndroidformsTpCost() != null) {
+        if ((existing.getAndroidformsTpCost() == null || existing.getAndroidformsTpCost().length == 0) && defaults.getAndroidformsTpCost() != null) {
             existing.setAndroidformsTpCost(defaults.getAndroidformsTpCost());
             updated = true;
         }

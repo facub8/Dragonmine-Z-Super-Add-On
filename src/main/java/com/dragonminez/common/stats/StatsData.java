@@ -380,7 +380,26 @@ public class StatsData {
             reduction += baseDrain * kiControlReduction;
         }
 
-        return Math.max(0.001, baseDrain - reduction);
+        double adjustedDrain = Math.max(0.001, baseDrain - reduction);
+
+        // GodForm skill ki drain reduction (15% per level above unlock threshold)
+        String formGroup = character.getActiveFormGroup();
+        if (formGroup != null) {
+            var formConfig = com.dragonminez.common.config.ConfigManager.getFormGroup(character.getRaceName(), formGroup);
+            if (formConfig != null && formConfig.getFormType().equalsIgnoreCase("god")) {
+                int godformLevel = skills.getSkillLevel("godform");
+                int unlockLevel = formData.getUnlockOnSkillLevel();
+                // Count how many ki-reduction levels apply (2, 4, 5 for SSG; 4, 5 for SSB)
+                int[] reductionLevels = {2, 4, 5};
+                for (int lvl : reductionLevels) {
+                    if (godformLevel >= lvl && lvl > unlockLevel) {
+                        adjustedDrain *= 0.85; // 15% reduction per applicable level
+                    }
+                }
+            }
+        }
+
+        return Math.max(0.001, adjustedDrain);
     }
 
     public double getAdjustedStaminaDrain() {
@@ -402,6 +421,52 @@ public class StatsData {
 
         return Math.max(1.0, baseDrain - reduction);
     }
+
+	public double getUltraInstinctDodgeChance() {
+		if (!status.isUltraInstinctActive()) return 0.0;
+		
+		double mastery = character.getFormMasteries().getMastery("special", "ultrainstinct");
+		// Chance base 10% + scaled by mastery percentage (up to 70% total at 100% mastery)
+		double chance = 0.10 + (mastery / 100.0) * 0.60;
+		
+		return Math.min(0.70, chance); 
+	}
+
+	public double getPhysicalExhaustionRate() {
+		if (!status.isUltraInstinctActive()) return 0;
+		
+		double mastery = character.getFormMasteries().getMastery("special", "ultrainstinct");
+		// Mastery Curve (steeper reward): 1.0 - sqrt(mastery/100)
+		double masteryCurve = 1.0 - Math.sqrt(mastery / 100.0);
+		
+		// Resistance (CON) Scaling: Threshold 300.0, Base Rate 8.0
+		// At 0 RES -> Scale = 1.0 -> 8.0/s (full exhaustion in ~12s)
+		// At 300 RES -> Scale = 0.5 -> 4.0/s (full exhaustion in ~25s)
+		// At 1000 RES -> Scale = 0.23 -> 1.84/s (full exhaustion in ~54s)
+		double resThreshold = 50000000.0;
+		double resScale = resThreshold / (resThreshold + stats.getResistance());
+		double baseRate = 8.0 * resScale;
+		
+		double penalties = 0.0;
+		if (character.hasActiveForm()) {
+			String form = character.getActiveForm();
+			String group = character.getActiveFormGroup();
+			double fMastery = character.getFormMasteries().getMastery(group, form);
+			double masteryEffect = Math.pow(fMastery / 100.0, 2);
+			double formPower = getFormMultiplier("STR") + getFormMultiplier("RES");
+
+			// 1.15 factor ensures a 0.15 residual penalty even at 100% form mastery
+			double formPenalty = (3.0 * formPower) * (1.15 - masteryEffect);
+			penalties += Math.max(0.0, formPenalty);
+			
+			if (skills.isSkillActive("kaioken")) {
+				penalties += 5.0; // Heavy penalty for Kaioken + UI
+			}
+		}
+		
+		if (mastery >= 100.0) return 0.0;
+		return Math.max(0.0, (baseRate + penalties) * masteryCurve);
+	}
 
 	public void saveApparanceData(CompoundTag nbt) {
 		nbt.put("Character", character.save());

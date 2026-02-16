@@ -388,7 +388,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             headBone.setScaleY(originalSY + inflation);
             headBone.setScaleZ(originalSZ + inflation);
 
-            renderFaceLayers(model, poseStack, animatable, bufferSource, character, raceName, currentForm, bodyType, partialTick, packedLight, packedOverlay);
+            renderFaceLayers(model, poseStack, animatable, bufferSource, character, stats, raceName, currentForm, bodyType, partialTick, packedLight, packedOverlay);
 
             headBone.setPosZ(originalZ);
             headBone.setScaleX(originalSX);
@@ -397,7 +397,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         });
     }
 
-    private void renderFaceLayers(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, String raceName, String currentForm, int bodyType, float pt, int pl, int po) {
+    private void renderFaceLayers(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, StatsData stats, String raceName, String currentForm, int bodyType, float pt, int pl, int po) {
         float[] eye1 = hexToRGB(character.getEye1Color());
         float[] eye2 = hexToRGB(character.getEye2Color());
         float[] hair = hexToRGB(character.getHairColor());
@@ -411,6 +411,12 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             if (!f.getHairColor().isEmpty()) hair = hexToRGB(f.getHairColor());
             if (!f.getBodyColor1().isEmpty()) b1 = hexToRGB(f.getBodyColor1());
             if (!f.getBodyColor2().isEmpty()) b2 = hexToRGB(f.getBodyColor2());
+        }
+
+        // Ultra Instinct: override eye color to silver
+        if (stats.getStatus().isUltraInstinctActive()) {
+            eye1 = hexToRGB("#C0C0C0");
+            eye2 = hexToRGB("#E8E8E8");
         }
 
         float[] skinTint = (raceName.equals("namekian") || raceName.equals("majin") ||

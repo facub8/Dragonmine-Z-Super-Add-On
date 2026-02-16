@@ -17,33 +17,38 @@ public class Skills {
     }
 
     private void registerDefaultSkills() {
-        skillMap.put("superform", new Skill("superform", 0));
-        skillMap.put("godform", new Skill("godform", 0));
-        skillMap.put("legendaryforms", new Skill("legendaryforms", 0));
+        skillMap.put("superform", new Skill("superform", 50));
+        skillMap.put("godform", new Skill("godform", 5));
+        skillMap.put("legendaryforms", new Skill("legendaryforms", 50));
+        skillMap.put("ultrainstinct", new Skill("ultrainstinct", 1));
     }
 
     public void updateTransformationMaxLevels(int superformMax, int godformMax, int legendaryformsMax, int androidformsMax) {
         Skill superform = skillMap.get("superform");
         if (superform != null) {
-            Skill updated = new Skill("superform", superform.getLevel(), superform.isActive(), superformMax);
+            int finalMax = Math.max(superform.getMaxLevel(), superformMax);
+            Skill updated = new Skill("superform", superform.getLevel(), superform.isActive(), finalMax);
             skillMap.put("superform", updated);
         }
 
         Skill godform = skillMap.get("godform");
         if (godform != null) {
-            Skill updated = new Skill("godform", godform.getLevel(), godform.isActive(), godformMax);
+            int finalMax = Math.max(godform.getMaxLevel(), godformMax);
+            Skill updated = new Skill("godform", godform.getLevel(), godform.isActive(), finalMax);
             skillMap.put("godform", updated);
         }
 
         Skill legendaryforms = skillMap.get("legendaryforms");
         if (legendaryforms != null) {
-            Skill updated = new Skill("legendaryforms", legendaryforms.getLevel(), legendaryforms.isActive(), legendaryformsMax);
+            int finalMax = Math.max(legendaryforms.getMaxLevel(), legendaryformsMax);
+            Skill updated = new Skill("legendaryforms", legendaryforms.getLevel(), legendaryforms.isActive(), finalMax);
             skillMap.put("legendaryforms", updated);
         }
 
         Skill androidforms = skillMap.get("androidforms");
         if (androidforms != null) {
-            Skill updated = new Skill("androidforms", androidforms.getLevel(), androidforms.isActive(), androidformsMax);
+            int finalMax = Math.max(androidforms.getMaxLevel(), androidformsMax);
+            Skill updated = new Skill("androidforms", androidforms.getLevel(), androidforms.isActive(), finalMax);
             skillMap.put("androidforms", updated);
         }
     }
@@ -145,6 +150,7 @@ public class Skills {
         if (nbt.contains("SkillsList", Tag.TAG_LIST)) {
             ListTag skillsList = nbt.getList("SkillsList", Tag.TAG_COMPOUND);
             skillMap.clear();
+            registerDefaultSkills();
             for (int i = 0; i < skillsList.size(); i++) {
                 CompoundTag skillTag = skillsList.getCompound(i);
                 Skill skill = Skill.load(skillTag);

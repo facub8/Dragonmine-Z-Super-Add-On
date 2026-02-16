@@ -36,7 +36,8 @@ public class BetaWhitelist {
 					LogUtil.info(Env.SERVER, "Whitelist updated! Loaded {} users.", activeList.size());
 				}
 			} catch (Exception e) {
-				LogUtil.error(Env.SERVER, "Failed to fetch remote whitelist. Using fallback list. Error: " + e.getMessage());
+				LogUtil.error(Env.SERVER,
+						"Failed to fetch remote whitelist. Using fallback list. Error: " + e.getMessage());
 			}
 		});
 	}

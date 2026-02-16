@@ -16,6 +16,7 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.util.TransformationsHelper;
+import com.dragonminez.common.util.lists.SaiyanForms;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.util.RacialSkillLogic;
@@ -127,7 +128,7 @@ public class TickHandler {
 				}
 			}
 
-			if (isChargingKi || (data.getStatus().isActionCharging() && (data.getStatus().getSelectedAction() == ActionMode.FORM || data.getStatus().getSelectedAction() == ActionMode.KAIOKEN))) {
+			if (isChargingKi || (data.getStatus().isActionCharging() && (data.getStatus().getSelectedAction() == ActionMode.FORM || data.getStatus().getSelectedAction() == ActionMode.KAIOKEN || data.getStatus().getSelectedAction() == ActionMode.GODFORMS))) {
 				data.getStatus().setAuraActive(true);
 			} else {
 				data.getStatus().setAuraActive(false);
@@ -211,6 +212,7 @@ public class TickHandler {
 
 			fusionTickHandling(serverPlayer, data);
 			handleStatusEffects(serverPlayer, data);
+			handleUltraInstinctEffects(serverPlayer, data);
 
             if (shouldSync) {
                 NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
@@ -381,10 +383,11 @@ public class TickHandler {
 				}
 				increment = 25;
 			}
-			case FORM -> {
-				FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data);
+			case FORM, GODFORMS -> {
+				String groupOverride = (mode == ActionMode.GODFORMS) ? SaiyanForms.GROUP_GOD : null;
+				FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data, groupOverride);
 				if (nextForm != null) {
-					String group = data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup() : data.getCharacter().getSelectedFormGroup();
+					String group = groupOverride != null ? groupOverride : (data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup() : data.getCharacter().getSelectedFormGroup());
 
 					String type = ConfigManager.getFormGroup(data.getCharacter().getRaceName(), group).getFormType();
 					int skillLvl = switch (type) {
@@ -395,6 +398,11 @@ public class TickHandler {
 						default -> 1;
 					};
 					increment = 5 * Math.max(1, skillLvl);
+				}
+			}
+			case ULTRA_INSTINCT -> {
+				if (data.getSkills().getSkillLevel("ultrainstinct") >= 1 && !data.getStatus().isUltraInstinctActive()) {
+					increment = 20;
 				}
 			}
 		}
@@ -450,9 +458,21 @@ public class TickHandler {
 			case FUSION -> {
 				return attemptFusion(player, data);
 			}
-			case FORM -> {
-				attemptTransform(player, data);
+			case FORM, GODFORMS -> {
+				String groupOverride = (mode == ActionMode.GODFORMS) ? SaiyanForms.GROUP_GOD : null;
+				attemptTransform(player, data, groupOverride);
 				return true;
+			}
+			case ULTRA_INSTINCT -> {
+				if (data.getSkills().getSkillLevel("ultrainstinct") >= 1) {
+					if (!data.getStatus().isUltraInstinctActive()) {
+						data.getStatus().setUltraInstinctActive(true);
+						player.displayClientMessage(Component.translatable("message.dragonminez.ultrainstinct.activate"), true);
+						player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+						return true;
+					}
+				}
 			}
 		}
 		return false;
@@ -481,16 +501,20 @@ public class TickHandler {
 
 
 	private static void attemptTransform(ServerPlayer player, StatsData data) {
-		FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data);
+		attemptTransform(player, data, null);
+	}
+
+	private static void attemptTransform(ServerPlayer player, StatsData data, String groupOverride) {
+		FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data, groupOverride);
 		if (nextForm == null) return;
 
 		int cost = (int) (data.getMaxEnergy() * nextForm.getEnergyDrain());
 		if (data.getResources().getCurrentEnergy() >= cost) {
 			data.getResources().removeEnergy(cost);
 
-			String group = data.getCharacter().hasActiveForm() ?
+			String group = groupOverride != null ? groupOverride : (data.getCharacter().hasActiveForm() ?
 					data.getCharacter().getActiveFormGroup() :
-					data.getCharacter().getSelectedFormGroup();
+					data.getCharacter().getSelectedFormGroup());
 
 			data.getCharacter().setActiveForm(group, nextForm.getName());
 
@@ -748,5 +772,53 @@ public class TickHandler {
 		if (!data.getCooldowns().hasCooldown(Cooldowns.DOUBLEDASH_CD)) {
 			player.removeEffect(MainEffects.DOUBLEDASH_CD.get());
 		}
+	}
+
+	private static void handleUltraInstinctEffects(ServerPlayer player, StatsData data) {
+		if (!data.getStatus().isUltraInstinctActive()) {
+			if (data.getResources().getCurrentPhysicalExhaustion() > 0 && player.tickCount % 40 == 0) {
+				data.getResources().removePhysicalExhaustion(1);
+			}
+			return;
+		}
+
+		if (player.isCreative() || player.isSpectator()) return;
+
+		if (player.tickCount % 2 == 0) {
+			double exhaustion = data.getResources().getCurrentPhysicalExhaustion();
+			String bar = getProgressBar((int)exhaustion, 10, "§c|", "§7.");
+			player.displayClientMessage(Component.translatable("gui.dragonminez.ultrainstinct.exhaustion_bar", bar, String.format("%.2f", exhaustion)), true);
+		}
+
+		if (player.tickCount % 20 == 0) {
+			// Faster passive mastery gain (0.02% per second)
+			data.getCharacter().getFormMasteries().addMastery("special", "ultrainstinct", 0.02, 100.0);
+
+			double exhaustionRate = data.getPhysicalExhaustionRate();
+			if (data.getCharacter().getFormMasteries().getMastery("special", "ultrainstinct") < 100.0) {
+				data.getResources().addPhysicalExhaustion(exhaustionRate);
+			}
+			
+			if (data.getResources().getCurrentPhysicalExhaustion() >= 100.0) {
+				data.getStatus().setUltraInstinctActive(false);
+				data.getResources().setCurrentPhysicalExhaustion(0);
+				
+				player.addEffect(new MobEffectInstance(net.minecraft.world.effect.MobEffects.WEAKNESS, 600, 1));
+				player.addEffect(new MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 600, 1));
+				player.displayClientMessage(Component.translatable("message.dragonminez.ultrainstinct.exhausted"), true);
+				player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.SHIELD_BREAK, SoundSource.PLAYERS, 1.0F, 1.0F);
+				
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+			}
+		}
+	}
+	private static String getProgressBar(int current, int total, String filledChar, String emptyChar) {
+		StringBuilder sb = new StringBuilder();
+		int filledAmount = (int) ((current / 100.0) * total);
+		for (int i = 0; i < total; i++) {
+			if (i < filledAmount) sb.append(filledChar);
+			else sb.append(emptyChar);
+		}
+		return sb.toString();
 	}
 }

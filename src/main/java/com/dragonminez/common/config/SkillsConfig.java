@@ -144,6 +144,29 @@ public class SkillsConfig {
 		fusionCosts.add(50000);
 		fusionCosts.add(75000);
 		skills.put("fusion", new SkillCosts(fusionCosts));
+		
+		List<Integer> ultraInstinctCosts = new ArrayList<>();
+		ultraInstinctCosts.add(-1); 
+		// Levels 1-10 costs (placeholder values, scaling up)
+		ultraInstinctCosts.add(10000);
+		ultraInstinctCosts.add(20000);
+		ultraInstinctCosts.add(30000);
+		ultraInstinctCosts.add(40000);
+		ultraInstinctCosts.add(50000);
+		ultraInstinctCosts.add(60000);
+		ultraInstinctCosts.add(70000);
+		ultraInstinctCosts.add(80000);
+		ultraInstinctCosts.add(90000);
+		ultraInstinctCosts.add(100000);
+		skills.put("ultrainstinct", new SkillCosts(ultraInstinctCosts));
+
+		List<Integer> godformCosts = new ArrayList<>();
+		godformCosts.add(-1);   // Level 1: unlocked via event (SSG)
+		godformCosts.add(20000); // Level 2: reduce SSG ki drain
+		godformCosts.add(40000); // Level 3: unlock SSB
+		godformCosts.add(60000); // Level 4: reduce SSG & SSB ki drain
+		godformCosts.add(80000); // Level 5: reduce SSG & SSB ki drain
+		skills.put("godform", new SkillCosts(godformCosts));
     }
 
     public Map<String, SkillCosts> getSkills() {

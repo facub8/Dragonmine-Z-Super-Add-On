@@ -175,7 +175,10 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         switch (currentCategory) {
             case SKILLS:
                 skills.getAllSkills().forEach((name, skill) -> {
-                    if (!name.equals("superform") && !name.equals("godform") && !name.equals("legendaryforms")) {
+                    // Exclude form-related skills from the general Skills tab
+                    if (!name.equals("superform") && !name.equals("godform") 
+                        && !name.equals("legendaryforms") && !name.equals("ultrainstinct")
+                        && !name.equals("androidforms")) {
                         skillNames.add(name);
                     }
                 });
@@ -185,7 +188,29 @@ public class SkillsMenuScreen extends BaseMenuScreen {
                 break;
             case FORMS:
                 if (skills.hasSkill("superform")) skillNames.add("superform");
-                if (skills.hasSkill("godform")) skillNames.add("godform");
+                
+                if (skills.hasSkill("godform")) {
+                    int godLevel = skills.getSkillLevel("godform");
+                    int superLevel = skills.getSkillLevel("superform");
+                    
+                    // Use the race config's cost array to determine the real superform max
+                    var raceConfig = ConfigManager.getRaceCharacter(statsData.getCharacter().getRaceName());
+                    int[] superformCosts = raceConfig.getSuperformTpCost();
+                    int realSuperMax = (superformCosts != null) ? superformCosts.length : 0;
+                    
+                    // Show if already obtained OR if superform is at config-defined max
+                    if (godLevel > 0 || superLevel >= realSuperMax) {
+                        skillNames.add("godform");
+                    }
+                }
+                
+                // Only show Ultra Instinct if already obtained (level > 0)
+                if (skills.hasSkill("ultrainstinct")) {
+                    if (skills.getSkillLevel("ultrainstinct") > 0) {
+                        skillNames.add("ultrainstinct");
+                    }
+                }
+
                 if (skills.hasSkill("legendaryforms")) skillNames.add("legendaryforms");
                 break;
         }

@@ -132,7 +132,7 @@ public class ClientStatsEvents {
 			}
 
 			boolean isDescendActionDown = isDescendKeyPressed && isActionKeyPressed;
-			if (isDescendActionDown && !wasDescendActionDown && (data.getStatus().getSelectedAction().equals(ActionMode.FORM) || data.getStatus().getSelectedAction().equals(ActionMode.KAIOKEN))) {
+			if (isDescendActionDown && !wasDescendActionDown && (data.getStatus().getSelectedAction().equals(ActionMode.FORM) || data.getStatus().getSelectedAction().equals(ActionMode.KAIOKEN) || data.getStatus().getSelectedAction().equals(ActionMode.ULTRA_INSTINCT) || data.getStatus().getSelectedAction().equals(ActionMode.GODFORMS))) {
 				NetworkHandler.sendToServer(new ExecuteActionC2S("descend"));
 			}
 			wasDescendActionDown = isDescendActionDown;

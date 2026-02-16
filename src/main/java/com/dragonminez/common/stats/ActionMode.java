@@ -1,5 +1,5 @@
 package com.dragonminez.common.stats;
 
 public enum ActionMode {
-	FORM, KAIOKEN, FUSION, RACIAL
+	FORM, KAIOKEN, FUSION, RACIAL, ULTRA_INSTINCT, GODFORMS
 }

@@ -316,6 +316,8 @@ public class AuraRenderHandler {
 		String kiHex = character.getAuraColor();
 		if (stats.getStatus().getActiveKaiokenPhase() >= 1) {
 			kiHex = "#DB182C";
+		} else if (stats.getStatus().isUltraInstinctActive()) {
+			kiHex = "#C0C0C0";
 		} else if (character.hasActiveForm() && character.getActiveFormData() != null) {
 			String formColor = character.getActiveFormData().getAuraColor();
 			if (formColor != null && !formColor.isEmpty()) kiHex = formColor;
@@ -645,14 +647,21 @@ public class AuraRenderHandler {
         }
 
 		if (!stats.getStatus().hasCreatedCharacter()) return;
-		if (!stats.getStatus().isAuraActive()) return;
+
+		// Ultra Instinct: override particle color to silver and force constant aura
+		boolean uiActive = stats.getStatus().isUltraInstinctActive();
+		if (uiActive) {
+			particleColor = 0xC0C0C0;
+		}
+
+		if (!stats.getStatus().isAuraActive() && !uiActive) return;
 
         for (int i = 0; i < 1; i++) spawnCalmAuraParticle(player, scale, particleColor);
 
         if (player.getRandom().nextInt(20) == 0) {
             int divineCount = 5 + player.getRandom().nextInt(10);
             for (int i = 0; i < divineCount; i++) {
-                spawnPassiveDivineParticle(player, scale, 0xFFFFFF);
+                spawnPassiveDivineParticle(player, scale, uiActive ? 0xE8E8E8 : 0xFFFFFF);
             }
         }
     }
