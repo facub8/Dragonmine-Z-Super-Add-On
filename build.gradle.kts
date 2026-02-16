@@ -161,7 +161,7 @@ dependencies {
     implementation("com.google.guava:guava:33.5.0-jre") { because("Security/compat override requested.") }
     implementation("io.netty:netty-codec:4.2.7.Final") { because("Security/compat override requested.") }
     implementation("io.netty:netty-handler:4.2.7.Final") { because("Security/compat override requested.") }
-    implementation("org.apache.commons:commons-compress:1.27.1") { because("Security/compat override requested.") }
+    implementation("org.apache.commons:commons-compress:1.28.0") { because("Security/compat override requested.") }
 
     // GeckoLib & Terrablender
     implementation(fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.8.3"))
