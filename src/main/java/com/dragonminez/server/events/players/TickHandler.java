@@ -837,46 +837,55 @@ public class TickHandler {
 	}
 
 	private static void handleUltraInstinctEffects(ServerPlayer player, StatsData data) {
-		if (!data.getStatus().isUltraInstinctActive()) {
-			if (data.getResources().getCurrentPhysicalExhaustion() > 0 && player.tickCount % 40 == 0) {
-				data.getResources().removePhysicalExhaustion(1);
-			}
-			return;
-		}
-
 		if (player.isCreative() || player.isSpectator())
 			return;
 
-		if (player.tickCount % 2 == 0) {
-			double exhaustion = data.getResources().getCurrentPhysicalExhaustion();
-			String bar = getProgressBar((int) exhaustion, 10, "§c|", "§7.");
-			player.displayClientMessage(Component.translatable("gui.dragonminez.ultrainstinct.exhaustion_bar", bar,
-					String.format("%.2f", exhaustion)), true);
+		double currentExhaustion = data.getResources().getCurrentPhysicalExhaustion();
+		boolean isActive = data.getStatus().isUltraInstinctActive();
+
+		// Lógica cuando está ACTIVO
+		if (isActive) {
+			if (player.tickCount % 20 == 0) { // Cada segundo
+				// Ganancia pasiva de maestria (0.02% por segundo)
+				data.getCharacter().getFormMasteries().addMastery("special", "ultrainstinct", 0.02, 100.0);
+
+				// Aumentar exhaustion
+				double exhaustionRate = data.getPhysicalExhaustionRate();
+				if (data.getCharacter().getFormMasteries().getMastery("special", "ultrainstinct") < 100.0) {
+					data.getResources().addPhysicalExhaustion(exhaustionRate);
+				}
+
+				// Chequeo de límite (100%)
+				if (data.getResources().getCurrentPhysicalExhaustion() >= 100.0) {
+					data.getStatus().setUltraInstinctActive(false);
+
+					player.addEffect(new MobEffectInstance(net.minecraft.world.effect.MobEffects.WEAKNESS, 600, 1));
+					player.addEffect(
+							new MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 600, 1));
+					player.displayClientMessage(Component.translatable("message.dragonminez.ultrainstinct.exhausted"),
+							true);
+					player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+							SoundEvents.SHIELD_BREAK, SoundSource.PLAYERS, 1.0F, 1.0F);
+
+					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				}
+			}
+		}
+		// Exhaustion decrecimiento
+		else {
+			if (currentExhaustion > 0 && player.tickCount % 10 == 0) {
+
+				data.getResources().removePhysicalExhaustion(0.5);
+			}
 		}
 
-		if (player.tickCount % 20 == 0) {
-			// Ganancia pasiva de maestria de ultra instinto (0.02% por segundo)
-			data.getCharacter().getFormMasteries().addMastery("special", "ultrainstinct", 0.02, 100.0);
-
-			double exhaustionRate = data.getPhysicalExhaustionRate();
-			if (data.getCharacter().getFormMasteries().getMastery("special", "ultrainstinct") < 100.0) {
-				data.getResources().addPhysicalExhaustion(exhaustionRate);
-			}
-
-			// Se podria agregar un efecto y no permitirle transformarse de nuevo
-			if (data.getResources().getCurrentPhysicalExhaustion() >= 100.0) {
-				data.getStatus().setUltraInstinctActive(false);
-				data.getResources().setCurrentPhysicalExhaustion(0);
-
-				player.addEffect(new MobEffectInstance(net.minecraft.world.effect.MobEffects.WEAKNESS, 600, 1));
-				player.addEffect(
-						new MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 600, 1));
-				player.displayClientMessage(Component.translatable("message.dragonminez.ultrainstinct.exhausted"),
-						true);
-				player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.SHIELD_BREAK,
-						SoundSource.PLAYERS, 1.0F, 1.0F);
-
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+		// Mostrar exhaustion
+		if (isActive || data.getResources().getCurrentPhysicalExhaustion() > 0) {
+			if (player.tickCount % 2 == 0) {
+				double exhaustion = data.getResources().getCurrentPhysicalExhaustion();
+				String bar = getProgressBar((int) exhaustion, 10, "§c|", "§7.");
+				player.displayClientMessage(Component.translatable("gui.dragonminez.ultrainstinct.exhaustion_bar", bar,
+						String.format("%.2f", exhaustion)), true);
 			}
 		}
 	}

@@ -114,7 +114,7 @@ public class CombatEvent {
 							0, 0);
 
 					if (attackerBP >= victimBP) {
-						victimData.getCharacter().getFormMasteries().addMastery("special", "ultrainstinct", 0.05,
+						victimData.getCharacter().getFormMasteries().addMastery("special", "ultrainstinct", 0.5,
 								100.0);
 					}
 
