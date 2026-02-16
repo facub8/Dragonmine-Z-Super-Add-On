@@ -17,13 +17,14 @@ public class Skills {
     }
 
     private void registerDefaultSkills() {
-        skillMap.put("superform", new Skill("superform", 50));
+        skillMap.put("superform", new Skill("superform", 0));
         skillMap.put("godform", new Skill("godform", 5));
-        skillMap.put("legendaryforms", new Skill("legendaryforms", 50));
+        skillMap.put("legendaryforms", new Skill("legendaryforms", 0));
         skillMap.put("ultrainstinct", new Skill("ultrainstinct", 1));
     }
 
-    public void updateTransformationMaxLevels(int superformMax, int godformMax, int legendaryformsMax, int androidformsMax) {
+    public void updateTransformationMaxLevels(int superformMax, int godformMax, int legendaryformsMax,
+            int androidformsMax) {
         Skill superform = skillMap.get("superform");
         if (superform != null) {
             int finalMax = Math.max(superform.getMaxLevel(), superformMax);
@@ -66,10 +67,10 @@ public class Skills {
         return skill != null ? skill.getLevel() : 0;
     }
 
-	public int getMaxSkillLevel(String name) {
-		Skill skill = skillMap.get(name.toLowerCase());
-		return skill != null ? skill.getMaxLevel() : 0;
-	}
+    public int getMaxSkillLevel(String name) {
+        Skill skill = skillMap.get(name.toLowerCase());
+        return skill != null ? skill.getMaxLevel() : 0;
+    }
 
     public void setSkillLevel(String name, int level) {
         String lowerName = name.toLowerCase();
@@ -99,10 +100,10 @@ public class Skills {
         }
     }
 
-	public void removeAllSkills() {
-		skillMap.clear();
-		registerDefaultSkills();
-	}
+    public void removeAllSkills() {
+        skillMap.clear();
+        registerDefaultSkills();
+    }
 
     public void addSkillLevel(String name, int amount) {
         Skill skill = skillMap.get(name.toLowerCase());
@@ -179,11 +180,10 @@ public class Skills {
         this.skillMap.clear();
         for (Map.Entry<String, Skill> entry : other.skillMap.entrySet()) {
             Skill newSkill = new Skill(
-                entry.getValue().getName(),
-                entry.getValue().getLevel(),
-                entry.getValue().isActive(),
-                entry.getValue().getMaxLevel()
-            );
+                    entry.getValue().getName(),
+                    entry.getValue().getLevel(),
+                    entry.getValue().isActive(),
+                    entry.getValue().getMaxLevel());
             this.skillMap.put(entry.getKey(), newSkill);
         }
     }

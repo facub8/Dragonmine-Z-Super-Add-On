@@ -27,118 +27,172 @@ import java.util.Set;
 public class StatsCommand {
 	private static final int MAX_STAT_VALUE = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
 
-	private static final SuggestionProvider<CommandSourceStack> STAT_SUGGESTIONS = (ctx, builder) ->
-			SharedSuggestionProvider.suggest(Set.of("STR", "SKP", "RES", "VIT", "PWR", "ENE", "ALL"), builder);
+	private static final SuggestionProvider<CommandSourceStack> STAT_SUGGESTIONS = (ctx,
+			builder) -> SharedSuggestionProvider.suggest(Set.of("STR", "SKP", "RES", "VIT", "PWR", "ENE", "ALL"),
+					builder);
 
-	private static final SuggestionProvider<CommandSourceStack> VALUE_SUGGESTIONS = (ctx, builder) ->
-			SharedSuggestionProvider.suggest(List.of("max", "100", "500", "1000", "5000", "10000"), builder);
+	private static final SuggestionProvider<CommandSourceStack> VALUE_SUGGESTIONS = (ctx,
+			builder) -> SharedSuggestionProvider.suggest(List.of("max", "100", "500", "1000", "5000", "10000"),
+					builder);
 
-	private static final SuggestionProvider<CommandSourceStack> PERCENTAGE_SUGGESTIONS = (ctx, builder) ->
-			SharedSuggestionProvider.suggest(List.of("10", "25", "50", "75"), builder);
+	private static final SuggestionProvider<CommandSourceStack> PERCENTAGE_SUGGESTIONS = (ctx,
+			builder) -> SharedSuggestionProvider.suggest(List.of("10", "25", "50", "75"), builder);
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("dmzstats")
-				.requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_INFO_SELF, DMZPermissions.STATS_INFO_OTHERS))
+				.requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_INFO_SELF,
+						DMZPermissions.STATS_INFO_OTHERS))
 
 				// info [target]
 				.then(Commands.literal("info")
 						.executes(ctx -> sendStatsInfo(ctx.getSource(), ctx.getSource().getPlayerOrException()))
 						.then(Commands.argument("target", EntityArgument.player())
-								.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_INFO_OTHERS))
-								.executes(ctx -> sendStatsInfo(ctx.getSource(), EntityArgument.getPlayer(ctx, "target")))))
+								.requires(source -> DMZPermissions.hasPermission(source,
+										DMZPermissions.STATS_INFO_OTHERS))
+								.executes(ctx -> sendStatsInfo(ctx.getSource(),
+										EntityArgument.getPlayer(ctx, "target")))))
 
 				// set <stat> <value> [targets]
 				.then(Commands.literal("set")
-						.requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_SET_SELF, DMZPermissions.STATS_SET_OTHERS))
+						.requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_SET_SELF,
+								DMZPermissions.STATS_SET_OTHERS))
 						.then(Commands.argument("stat", StringArgumentType.word()).suggests(STAT_SUGGESTIONS)
 								.then(Commands.argument("amount", StringArgumentType.word()).suggests(VALUE_SUGGESTIONS)
-										.executes(ctx -> modifyStats(ctx.getSource(), StringArgumentType.getString(ctx, "stat"), StringArgumentType.getString(ctx, "amount"), List.of(ctx.getSource().getPlayerOrException()), "set"))
+										.executes(ctx -> modifyStats(ctx.getSource(),
+												StringArgumentType.getString(ctx, "stat"),
+												StringArgumentType.getString(ctx, "amount"),
+												List.of(ctx.getSource().getPlayerOrException()), "set"))
 										.then(Commands.argument("targets", EntityArgument.players())
-												.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_SET_OTHERS))
-												.executes(ctx -> modifyStats(ctx.getSource(), StringArgumentType.getString(ctx, "stat"), StringArgumentType.getString(ctx, "amount"), EntityArgument.getPlayers(ctx, "targets"), "set"))))))
+												.requires(source -> DMZPermissions.hasPermission(source,
+														DMZPermissions.STATS_SET_OTHERS))
+												.executes(ctx -> modifyStats(ctx.getSource(),
+														StringArgumentType.getString(ctx, "stat"),
+														StringArgumentType.getString(ctx, "amount"),
+														EntityArgument.getPlayers(ctx, "targets"), "set"))))))
 
 				// add <stat> <value> [targets]
 				.then(Commands.literal("add")
-						.requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_ADD_SELF, DMZPermissions.STATS_ADD_OTHERS))
+						.requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_ADD_SELF,
+								DMZPermissions.STATS_ADD_OTHERS))
 						.then(Commands.argument("stat", StringArgumentType.word()).suggests(STAT_SUGGESTIONS)
 								.then(Commands.argument("amount", StringArgumentType.word()).suggests(VALUE_SUGGESTIONS)
-										.executes(ctx -> modifyStats(ctx.getSource(), StringArgumentType.getString(ctx, "stat"), StringArgumentType.getString(ctx, "amount"), List.of(ctx.getSource().getPlayerOrException()), "add"))
+										.executes(ctx -> modifyStats(ctx.getSource(),
+												StringArgumentType.getString(ctx, "stat"),
+												StringArgumentType.getString(ctx, "amount"),
+												List.of(ctx.getSource().getPlayerOrException()), "add"))
 										.then(Commands.argument("targets", EntityArgument.players())
-												.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_ADD_OTHERS))
-												.executes(ctx -> modifyStats(ctx.getSource(), StringArgumentType.getString(ctx, "stat"), StringArgumentType.getString(ctx, "amount"), EntityArgument.getPlayers(ctx, "targets"), "add"))))))
+												.requires(source -> DMZPermissions.hasPermission(source,
+														DMZPermissions.STATS_ADD_OTHERS))
+												.executes(ctx -> modifyStats(ctx.getSource(),
+														StringArgumentType.getString(ctx, "stat"),
+														StringArgumentType.getString(ctx, "amount"),
+														EntityArgument.getPlayers(ctx, "targets"), "add"))))))
 
 				// remove <stat> <value> [targets]
 				.then(Commands.literal("remove")
-						.requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_ADD_SELF, DMZPermissions.STATS_ADD_OTHERS))
+						.requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_ADD_SELF,
+								DMZPermissions.STATS_ADD_OTHERS))
 						.then(Commands.argument("stat", StringArgumentType.word()).suggests(STAT_SUGGESTIONS)
 								.then(Commands.argument("amount", StringArgumentType.word()).suggests(VALUE_SUGGESTIONS)
-										.executes(ctx -> modifyStats(ctx.getSource(), StringArgumentType.getString(ctx, "stat"), StringArgumentType.getString(ctx, "amount"), List.of(ctx.getSource().getPlayerOrException()), "remove"))
+										.executes(ctx -> modifyStats(ctx.getSource(),
+												StringArgumentType.getString(ctx, "stat"),
+												StringArgumentType.getString(ctx, "amount"),
+												List.of(ctx.getSource().getPlayerOrException()), "remove"))
 										.then(Commands.argument("targets", EntityArgument.players())
-												.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_ADD_OTHERS))
-												.executes(ctx -> modifyStats(ctx.getSource(), StringArgumentType.getString(ctx, "stat"), StringArgumentType.getString(ctx, "amount"), EntityArgument.getPlayers(ctx, "targets"), "remove"))))))
+												.requires(source -> DMZPermissions.hasPermission(source,
+														DMZPermissions.STATS_ADD_OTHERS))
+												.executes(ctx -> modifyStats(ctx.getSource(),
+														StringArgumentType.getString(ctx, "stat"),
+														StringArgumentType.getString(ctx, "amount"),
+														EntityArgument.getPlayers(ctx, "targets"), "remove"))))))
 
 				// reset [keepPercentage] [targets]
 				.then(Commands.literal("reset")
-						.requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_RESET_SELF, DMZPermissions.STATS_RESET_OTHERS))
-						.executes(ctx -> resetStats(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), null))
-						.then(Commands.argument("keepPercentage", StringArgumentType.word()).suggests(PERCENTAGE_SUGGESTIONS)
-								.executes(ctx -> resetStats(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), StringArgumentType.getString(ctx, "keepPercentage")))
+						.requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_RESET_SELF,
+								DMZPermissions.STATS_RESET_OTHERS))
+						.executes(ctx -> resetStats(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()),
+								null))
+						.then(Commands.argument("keepPercentage", StringArgumentType.word())
+								.suggests(PERCENTAGE_SUGGESTIONS)
+								.executes(ctx -> resetStats(ctx.getSource(),
+										List.of(ctx.getSource().getPlayerOrException()),
+										StringArgumentType.getString(ctx, "keepPercentage")))
 								.then(Commands.argument("targets", EntityArgument.players())
-										.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_RESET_OTHERS))
-										.executes(ctx -> resetStats(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), StringArgumentType.getString(ctx, "keepPercentage")))))
+										.requires(source -> DMZPermissions.hasPermission(source,
+												DMZPermissions.STATS_RESET_OTHERS))
+										.executes(ctx -> resetStats(ctx.getSource(),
+												EntityArgument.getPlayers(ctx, "targets"),
+												StringArgumentType.getString(ctx, "keepPercentage")))))
 						.then(Commands.argument("targets", EntityArgument.players())
-								.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_RESET_OTHERS))
-								.executes(ctx -> resetStats(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), null))))
-		);
+								.requires(source -> DMZPermissions.hasPermission(source,
+										DMZPermissions.STATS_RESET_OTHERS))
+								.executes(ctx -> resetStats(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"),
+										null)))));
 	}
 
 	private static int sendStatsInfo(CommandSourceStack source, ServerPlayer player) {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.header", player.getName().getString()).withStyle(ChatFormatting.GOLD), false);
-			
+			source.sendSuccess(
+					() -> Component.translatable("command.dragonminez.stats.info.header", player.getName().getString())
+							.withStyle(ChatFormatting.GOLD),
+					false);
+
 			// Base Stats
 			var stats = data.getStats();
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.stats", 
-					stats.getStrength(), stats.getStrikePower(), stats.getResistance(), 
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.stats",
+					stats.getStrength(), stats.getStrikePower(), stats.getResistance(),
 					stats.getVitality(), stats.getKiPower(), stats.getEnergy()).withStyle(ChatFormatting.GRAY), false);
-			
+
 			// TP
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.tp", data.getResources().getTrainingPoints()).withStyle(ChatFormatting.GREEN), false);
+			source.sendSuccess(() -> Component
+					.translatable("command.dragonminez.stats.info.tp", data.getResources().getTrainingPoints())
+					.withStyle(ChatFormatting.GREEN), false);
 
 			// Skills
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.skills_header").withStyle(ChatFormatting.GOLD), false);
-			String[] trackedSkills = {"superform", "godform", "legendaryforms", "ultrainstinct", "kaioken"};
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.skills_header")
+					.withStyle(ChatFormatting.GOLD), false);
+			String[] trackedSkills = { "superform", "godform", "legendaryforms", "ultrainstinct", "kaioken" };
 			for (String sName : trackedSkills) {
 				if (data.getSkills().hasSkill(sName)) {
 					int lvl = data.getSkills().getSkillLevel(sName);
 					int maxLvl = data.getSkills().getMaxSkillLevel(sName);
-					source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.skill_item", sName, lvl, maxLvl).withStyle(ChatFormatting.GRAY), false);
+					source.sendSuccess(() -> Component
+							.translatable("command.dragonminez.stats.info.skill_item", sName, lvl, maxLvl)
+							.withStyle(ChatFormatting.GRAY), false);
 				}
 			}
 
 			// Masteries
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.masteries_header").withStyle(ChatFormatting.GOLD), false);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.masteries_header")
+					.withStyle(ChatFormatting.GOLD), false);
 			var masteries = data.getCharacter().getFormMasteries();
-			
-			// Show UI Mastery separately if learned
+
+			// Muestra la maestria del UI por separado si lo tiene desbloqueado
 			if (data.getSkills().getSkillLevel("ultrainstinct") >= 1) {
 				double uiMastery = masteries.getMastery("special", "ultrainstinct");
-				source.sendSuccess(() -> Component.literal("§7- Ultra Instinct Mastery: §d" + String.format("%.2f", uiMastery) + "%"), false);
+				source.sendSuccess(
+						() -> Component
+								.literal("§7- Ultra Instinct Mastery: §d" + String.format("%.2f", uiMastery) + "%"),
+						false);
 			}
 
 			if (data.getCharacter().hasActiveForm()) {
 				String group = data.getCharacter().getActiveFormGroup();
 				String name = data.getCharacter().getActiveForm();
 				double val = masteries.getMastery(group, name);
-				source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.mastery_item", name, String.format("%.2f", val)).withStyle(ChatFormatting.LIGHT_PURPLE), false);
+				source.sendSuccess(() -> Component
+						.translatable("command.dragonminez.stats.info.mastery_item", name, String.format("%.2f", val))
+						.withStyle(ChatFormatting.LIGHT_PURPLE), false);
 			} else {
-				source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.no_mastery").withStyle(ChatFormatting.GRAY), false);
+				source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.no_mastery")
+						.withStyle(ChatFormatting.GRAY), false);
 			}
 		});
 		return 1;
 	}
 
-	private static int modifyStats(CommandSourceStack source, String stat, String amountStr, Collection<ServerPlayer> targets, String mode) {
+	private static int modifyStats(CommandSourceStack source, String stat, String amountStr,
+			Collection<ServerPlayer> targets, String mode) {
 		String finalStat = stat.toUpperCase();
 		if (!isValidStat(finalStat)) {
 			source.sendFailure(Component.translatable("command.dragonminez.stats.invalid_stat", stat));
@@ -147,9 +201,12 @@ public class StatsCommand {
 
 		int value;
 		try {
-			if (amountStr.equalsIgnoreCase("max")) value = MAX_STAT_VALUE;
-			else if (amountStr.equalsIgnoreCase("min")) value = 5;
-			else value = Integer.parseInt(amountStr);
+			if (amountStr.equalsIgnoreCase("max"))
+				value = MAX_STAT_VALUE;
+			else if (amountStr.equalsIgnoreCase("min"))
+				value = 5;
+			else
+				value = Integer.parseInt(amountStr);
 		} catch (NumberFormatException e) {
 			source.sendFailure(Component.translatable("command.dragonminez.stats.invalid_number", amountStr));
 			return 0;
@@ -163,7 +220,7 @@ public class StatsCommand {
 				int oldMaxStamina = data.getMaxStamina();
 
 				if (finalStat.equals("ALL")) {
-					for (String s : new String[]{"STR", "SKP", "RES", "VIT", "PWR", "ENE"}) {
+					for (String s : new String[] { "STR", "SKP", "RES", "VIT", "PWR", "ENE" }) {
 						applyModification(data, s, value, mode);
 					}
 				} else {
@@ -171,11 +228,14 @@ public class StatsCommand {
 				}
 
 				float newMaxHealth = data.getMaxHealth();
-				if (newMaxHealth > oldMaxHealth) player.heal(newMaxHealth - oldMaxHealth);
+				if (newMaxHealth > oldMaxHealth)
+					player.heal(newMaxHealth - oldMaxHealth);
 				int newMaxEnergy = data.getMaxEnergy();
-				if (newMaxEnergy > oldMaxEnergy) data.getResources().addEnergy(newMaxEnergy - oldMaxEnergy);
+				if (newMaxEnergy > oldMaxEnergy)
+					data.getResources().addEnergy(newMaxEnergy - oldMaxEnergy);
 				int newMaxStamina = data.getMaxStamina();
-				if (newMaxStamina > oldMaxStamina) data.getResources().addStamina(newMaxStamina - oldMaxStamina);
+				if (newMaxStamina > oldMaxStamina)
+					data.getResources().addStamina(newMaxStamina - oldMaxStamina);
 
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});
@@ -184,10 +244,12 @@ public class StatsCommand {
 
 		if (successCount == 1 && targets.size() == 1) {
 			ServerPlayer single = targets.iterator().next();
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats." + mode + ".success", finalStat, amountStr, single.getName().getString()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats." + mode + ".success", finalStat,
+					amountStr, single.getName().getString()), true);
 		} else {
 			int finalSuccess = successCount;
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats." + mode + ".multiple", finalSuccess, finalStat, amountStr), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats." + mode + ".multiple",
+					finalSuccess, finalStat, amountStr), true);
 		}
 
 		return successCount;
@@ -201,7 +263,8 @@ public class StatsCommand {
 		}
 	}
 
-	private static int resetStats(CommandSourceStack source, Collection<ServerPlayer> targets, String keepPercentageStr) {
+	private static int resetStats(CommandSourceStack source, Collection<ServerPlayer> targets,
+			String keepPercentageStr) {
 		Integer keepPercentage = null;
 		if (keepPercentageStr != null && !keepPercentageStr.isEmpty()) {
 			try {
@@ -211,7 +274,8 @@ public class StatsCommand {
 					return 0;
 				}
 			} catch (NumberFormatException e) {
-				source.sendFailure(Component.translatable("command.dragonminez.stats.invalid_number", keepPercentageStr));
+				source.sendFailure(
+						Component.translatable("command.dragonminez.stats.invalid_number", keepPercentageStr));
 				return 0;
 			}
 		}
@@ -251,7 +315,8 @@ public class StatsCommand {
 					data.getResources().setTrainingPoints(0);
 				}
 
-				if (data.getStatus().isFused()) FusionLogic.endFusion(player, data, false);
+				if (data.getStatus().isFused())
+					FusionLogic.endFusion(player, data, false);
 				data.getResources().setRacialSkillCount(0);
 				data.getResources().setPowerRelease(0);
 				data.getStatus().setActiveKaiokenPhase(0);
@@ -265,16 +330,19 @@ public class StatsCommand {
 				data.getStatus().setCreatedCharacter(false);
 
 				player.setHealth(20.0F);
-				player.getAttribute(Attributes.MAX_HEALTH).removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
+				player.getAttribute(Attributes.MAX_HEALTH)
+						.removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
 				player.setHealth(20.0F);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});
 		}
 
 		if (targets.size() == 1) {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.reset.success", targets.iterator().next().getName().getString()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.reset.success",
+					targets.iterator().next().getName().getString()), true);
 		} else {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.reset.multiple", targets.size()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.reset.multiple", targets.size()),
+					true);
 		}
 		return targets.size();
 	}

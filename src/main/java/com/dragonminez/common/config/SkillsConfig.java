@@ -8,19 +8,19 @@ import java.util.List;
 import java.util.Map;
 
 public class SkillsConfig {
-    @SerializedName("skills")
-    private Map<String, SkillCosts> skills = new HashMap<>();
+	@SerializedName("skills")
+	private Map<String, SkillCosts> skills = new HashMap<>();
 
-    public SkillsConfig() {
-        createDefaults();
-    }
+	public SkillsConfig() {
+		createDefaults();
+	}
 
-    private void createDefaults() {
-        List<Integer> jumpCosts = new ArrayList<>();
+	private void createDefaults() {
+		List<Integer> jumpCosts = new ArrayList<>();
 		jumpCosts.add(-1);
-        jumpCosts.add(2000);
-        jumpCosts.add(3000);
-        jumpCosts.add(4000);
+		jumpCosts.add(2000);
+		jumpCosts.add(3000);
+		jumpCosts.add(4000);
 		jumpCosts.add(5000);
 		jumpCosts.add(6000);
 		jumpCosts.add(7000);
@@ -144,57 +144,46 @@ public class SkillsConfig {
 		fusionCosts.add(50000);
 		fusionCosts.add(75000);
 		skills.put("fusion", new SkillCosts(fusionCosts));
-		
+
 		List<Integer> ultraInstinctCosts = new ArrayList<>();
-		ultraInstinctCosts.add(-1); 
-		// Levels 1-10 costs (placeholder values, scaling up)
-		ultraInstinctCosts.add(10000);
-		ultraInstinctCosts.add(20000);
-		ultraInstinctCosts.add(30000);
-		ultraInstinctCosts.add(40000);
-		ultraInstinctCosts.add(50000);
-		ultraInstinctCosts.add(60000);
-		ultraInstinctCosts.add(70000);
-		ultraInstinctCosts.add(80000);
-		ultraInstinctCosts.add(90000);
-		ultraInstinctCosts.add(100000);
+		ultraInstinctCosts.add(100000); // PRUEBA
 		skills.put("ultrainstinct", new SkillCosts(ultraInstinctCosts));
 
 		List<Integer> godformCosts = new ArrayList<>();
-		godformCosts.add(-1);   // Level 1: unlocked via event (SSG)
+		godformCosts.add(-1); // Level 1: desbloqueo por comandos o por NPC, desbloquea SSG
 		godformCosts.add(20000); // Level 2: reduce SSG ki drain
-		godformCosts.add(40000); // Level 3: unlock SSB
-		godformCosts.add(60000); // Level 4: reduce SSG & SSB ki drain
+		godformCosts.add(40000); // Level 3: Desbloquea SSB
+		godformCosts.add(60000); // Level 4: reduce SSG y SSB ki drain
 		godformCosts.add(80000); // Level 5: reduce SSG & SSB ki drain
 		skills.put("godform", new SkillCosts(godformCosts));
-    }
+	}
 
-    public Map<String, SkillCosts> getSkills() {
-        return skills;
-    }
+	public Map<String, SkillCosts> getSkills() {
+		return skills;
+	}
 
-    public SkillCosts getSkillCosts(String skillName) {
-        return skills.getOrDefault(skillName.toLowerCase(), new SkillCosts(new ArrayList<>()));
-    }
+	public SkillCosts getSkillCosts(String skillName) {
+		return skills.getOrDefault(skillName.toLowerCase(), new SkillCosts(new ArrayList<>()));
+	}
 
-    public int getCostForLevel(String skillName, int level) {
-        SkillCosts skillCosts = getSkillCosts(skillName);
-        if (level < 1 || level > skillCosts.costs.size()) {
-            return -1;
-        }
-        return Math.max(0, skillCosts.costs.get(level - 1));
-    }
+	public int getCostForLevel(String skillName, int level) {
+		SkillCosts skillCosts = getSkillCosts(skillName);
+		if (level < 1 || level > skillCosts.costs.size()) {
+			return -1;
+		}
+		return Math.max(0, skillCosts.costs.get(level - 1));
+	}
 
-    public double getMultiplierForLevel(String skillName, int level) {
-        SkillCosts skillCosts = getSkillCosts(skillName);
-        if (skillCosts.multipliers == null || skillCosts.multipliers.isEmpty()) {
-            return 0.0;
-        }
-        if (level < 1) {
-            return 0.0;
-        }
-        return Math.max(0.0, skillCosts.multipliers.get(level - 1));
-    }
+	public double getMultiplierForLevel(String skillName, int level) {
+		SkillCosts skillCosts = getSkillCosts(skillName);
+		if (skillCosts.multipliers == null || skillCosts.multipliers.isEmpty()) {
+			return 0.0;
+		}
+		if (level < 1) {
+			return 0.0;
+		}
+		return Math.max(0.0, skillCosts.multipliers.get(level - 1));
+	}
 
 	public double getDrainRateForLevel(String skillName, int level) {
 		SkillCosts skillCosts = getSkillCosts(skillName);
@@ -207,26 +196,26 @@ public class SkillsConfig {
 		return Math.max(0.0, skillCosts.drainRate.get(level - 1));
 	}
 
-    public boolean canPurchaseLevel(String skillName, int level) {
-        int cost = getCostForLevel(skillName, level);
-        return cost >= 0;
-    }
+	public boolean canPurchaseLevel(String skillName, int level) {
+		int cost = getCostForLevel(skillName, level);
+		return cost >= 0;
+	}
 
-    public static class SkillCosts {
-        private List<Integer> costs;
-        private List<Double> multipliers;
+	public static class SkillCosts {
+		private List<Integer> costs;
+		private List<Double> multipliers;
 		private List<Double> drainRate;
 
-        public SkillCosts(List<Integer> costs) {
-            this.costs = costs;
-            this.multipliers = null;
+		public SkillCosts(List<Integer> costs) {
+			this.costs = costs;
+			this.multipliers = null;
 			this.drainRate = null;
-        }
+		}
 
-        public SkillCosts(List<Integer> costs, List<Double> multipliers) {
-            this.costs = costs;
-            this.multipliers = multipliers;
-        }
+		public SkillCosts(List<Integer> costs, List<Double> multipliers) {
+			this.costs = costs;
+			this.multipliers = multipliers;
+		}
 
 		public SkillCosts(List<Integer> costs, List<Double> multipliers, List<Double> drainRate) {
 			this.costs = costs;
@@ -234,20 +223,20 @@ public class SkillsConfig {
 			this.drainRate = drainRate;
 		}
 
-        public List<Integer> getCosts() {
-            return costs;
-        }
+		public List<Integer> getCosts() {
+			return costs;
+		}
 
-        public List<Double> getMultipliers() {
-            return multipliers;
-        }
+		public List<Double> getMultipliers() {
+			return multipliers;
+		}
 
 		public List<Double> getDrainRate() {
 			return drainRate;
 		}
 
-        public int getMaxLevel() {
-            return costs.size();
-        }
-    }
+		public int getMaxLevel() {
+			return costs.size();
+		}
+	}
 }

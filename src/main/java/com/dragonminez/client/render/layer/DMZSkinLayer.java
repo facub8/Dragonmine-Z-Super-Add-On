@@ -40,10 +40,13 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
     }
 
     @Override
-    public void render(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+    public void render(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType,
+            MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight,
+            int packedOverlay) {
 
         var player = (AbstractClientPlayer) animatable;
-        if (player == null) return;
+        if (player == null)
+            return;
 
         var statsCap = StatsProvider.get(StatsCapability.INSTANCE, player);
         var stats = statsCap.orElse(new StatsData(player));
@@ -52,12 +55,15 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         renderBody(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
         renderHair(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
-		renderAndroid(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
+        renderAndroid(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight,
+                packedOverlay);
         renderFace(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
-        renderTattoos(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
+        renderTattoos(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight,
+                packedOverlay);
     }
 
-    private void renderBody(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
+    private void renderBody(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource,
+            AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
         var character = stats.getCharacter();
         String raceName = character.getRace().toLowerCase();
         String gender = character.getGender().toLowerCase();
@@ -72,16 +78,20 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         if (hasForm && character.getActiveFormData() != null) {
             var activeForm = character.getActiveFormData();
-            if (!activeForm.getBodyColor1().isEmpty()) bodyTint = hexToRGB(activeForm.getBodyColor1());
-            if (!activeForm.getBodyColor2().isEmpty()) bodyTint2 = hexToRGB(activeForm.getBodyColor2());
-            if (!activeForm.getBodyColor3().isEmpty()) bodyTint3 = hexToRGB(activeForm.getBodyColor3());
-            if (!activeForm.getHairColor().isEmpty()) hairTint = hexToRGB(activeForm.getHairColor());
+            if (!activeForm.getBodyColor1().isEmpty())
+                bodyTint = hexToRGB(activeForm.getBodyColor1());
+            if (!activeForm.getBodyColor2().isEmpty())
+                bodyTint2 = hexToRGB(activeForm.getBodyColor2());
+            if (!activeForm.getBodyColor3().isEmpty())
+                bodyTint3 = hexToRGB(activeForm.getBodyColor3());
+            if (!activeForm.getHairColor().isEmpty())
+                hairTint = hexToRGB(activeForm.getHairColor());
         }
 
         if (raceName.equals("bioandroid")) {
             if (Objects.equals(currentForm, BioAndroidForms.PERFECT)
                     || Objects.equals(currentForm, BioAndroidForms.SUPER_PERFECT)) {
-                bodyTint2 = new float[]{1.0f, 1.0f, 1.0f};
+                bodyTint2 = new float[] { 1.0f, 1.0f, 1.0f };
             }
         }
 
@@ -102,13 +112,16 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
                 }
             }
 
-            renderColoredLayer(model, poseStack, animatable, bufferSource, "textures/entity/races/tail1.png", tailColor, partialTick, packedLight, packedOverlay);
+            renderColoredLayer(model, poseStack, animatable, bufferSource, "textures/entity/races/tail1.png", tailColor,
+                    partialTick, packedLight, packedOverlay);
         }
 
-        if (raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) {
+        if (raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU)
+                || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) {
             String oozaruPath = "textures/entity/races/humansaiyan/oozaru_";
 
-            float[] furColor = Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU) ? hexToRGB("#FFD700") : hexToRGB("#6B1E0E");
+            float[] furColor = Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU) ? hexToRGB("#FFD700")
+                    : hexToRGB("#6B1E0E");
             float[] skinColor = hexToRGB("#CC978D");
 
             if (hasForm && character.getActiveFormData() != null) {
@@ -118,11 +131,14 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
                     furColor = ColorUtils.hexToRgb(form.getHairColor());
                 }
 
-                if (!form.getBodyColor1().isEmpty()) skinColor = hexToRGB(form.getBodyColor1());
+                if (!form.getBodyColor1().isEmpty())
+                    skinColor = hexToRGB(form.getBodyColor1());
             }
 
-            renderColoredLayer(model, poseStack, animatable, bufferSource, oozaruPath + "layer1.png", furColor, partialTick, packedLight, packedOverlay);
-            renderColoredLayer(model, poseStack, animatable, bufferSource, oozaruPath + "layer2.png", skinColor, partialTick, packedLight, packedOverlay);
+            renderColoredLayer(model, poseStack, animatable, bufferSource, oozaruPath + "layer1.png", furColor,
+                    partialTick, packedLight, packedOverlay);
+            renderColoredLayer(model, poseStack, animatable, bufferSource, oozaruPath + "layer2.png", skinColor,
+                    partialTick, packedLight, packedOverlay);
             return;
         }
 
@@ -140,52 +156,72 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             }
 
             ResourceLocation playerSkin = player.getSkinTextureLocation();
-            renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(playerSkin), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay);
+            renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(playerSkin),
+                    1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay);
 
             return;
         }
 
-		boolean defaultRace = ConfigManager.isDefaultRace(raceName);
-		if (!defaultRace) {
-			String customModel = (raceConfig != null) ? raceConfig.getCustomModel() : "";
-			if (hasForm && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel() && !character.getActiveFormData().getCustomModel().isEmpty()) {
-				ResourceLocation formSkinLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + character.getActiveFormData().getCustomModel() + ".png");
-				renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(formSkinLoc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay);
-				return;
-			} else if (customModel != null && !customModel.isEmpty()) {
-				ResourceLocation customSkinLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + customModel + ".png");
-				renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(customSkinLoc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay);
-				return;
-			}
-		}
+        boolean defaultRace = ConfigManager.isDefaultRace(raceName);
+        if (!defaultRace) {
+            String customModel = (raceConfig != null) ? raceConfig.getCustomModel() : "";
+            if (hasForm && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel()
+                    && !character.getActiveFormData().getCustomModel().isEmpty()) {
+                ResourceLocation formSkinLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+                        "textures/entity/races/" + character.getActiveFormData().getCustomModel() + ".png");
+                renderLayerWholeModel(model, poseStack, bufferSource, animatable,
+                        RenderType.entityTranslucent(formSkinLoc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight,
+                        packedOverlay);
+                return;
+            } else if (customModel != null && !customModel.isEmpty()) {
+                ResourceLocation customSkinLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+                        "textures/entity/races/" + customModel + ".png");
+                renderLayerWholeModel(model, poseStack, bufferSource, animatable,
+                        RenderType.entityTranslucent(customSkinLoc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight,
+                        packedOverlay);
+                return;
+            }
+        }
 
         boolean isMajin = raceName.equals("majin");
         boolean isFemale = gender.equals("female") || gender.equals("mujer");
-        if (isMajin && isFemale && (Objects.equals(currentForm, MajinForms.SUPER) || Objects.equals(currentForm, MajinForms.ULTRA))) {
-            renderColoredLayer(model, poseStack, animatable, bufferSource, "textures/entity/races/tail1.png", bodyTint, partialTick, packedLight, packedOverlay);
+        if (isMajin && isFemale
+                && (Objects.equals(currentForm, MajinForms.SUPER) || Objects.equals(currentForm, MajinForms.ULTRA))) {
+            renderColoredLayer(model, poseStack, animatable, bufferSource, "textures/entity/races/tail1.png", bodyTint,
+                    partialTick, packedLight, packedOverlay);
         }
 
-        if (raceName.equals("namekian") || raceName.equals("frostdemon") || raceName.equals("bioandroid") || raceName.equals("majin")) {
-            renderSpecializedRace(model, poseStack, animatable, bufferSource, raceName, currentForm, bodyType, hasForm, bodyTint, bodyTint2, bodyTint3, hairTint, partialTick, packedLight, packedOverlay);
+        if (raceName.equals("namekian") || raceName.equals("frostdemon") || raceName.equals("bioandroid")
+                || raceName.equals("majin")) {
+            renderSpecializedRace(model, poseStack, animatable, bufferSource, raceName, currentForm, bodyType, hasForm,
+                    bodyTint, bodyTint2, bodyTint3, hairTint, partialTick, packedLight, packedOverlay);
             return;
         }
 
         String textureBaseName = isStandard ? "humansaiyan" : raceName;
         String genderPart = (raceConfig != null && raceConfig.hasGender()) ? "_" + gender : "";
-        String customPath = "textures/entity/races/" + textureBaseName + "/bodytype" + genderPart + "_" + bodyType + ".png";
-        renderColoredLayer(model, poseStack, animatable, bufferSource, customPath, bodyTint, partialTick, packedLight, packedOverlay);
+        String customPath = "textures/entity/races/" + textureBaseName + "/bodytype" + genderPart + "_" + bodyType
+                + ".png";
+        renderColoredLayer(model, poseStack, animatable, bufferSource, customPath, bodyTint, partialTick, packedLight,
+                packedOverlay);
     }
 
-    private void renderHair(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
+    private void renderHair(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource,
+            AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
         var character = stats.getCharacter();
         String raceName = character.getRace().toLowerCase();
         String currentForm = character.getActiveForm();
         int hairId = character.getHairId();
 
-        if (!raceName.equals("human") && !raceName.equals("saiyan")) return;
-        if (raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) return;
-        if (hairId == 5) return;
-		if (hairId == 0 && character.getHairBase().getVisibleStrandCount() == 0) return;
+        if (!raceName.equals("human") && !raceName.equals("saiyan"))
+            return;
+        if (raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU)
+                || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)))
+            return;
+        if (hairId == 5)
+            return;
+        if (hairId == 0 && character.getHairBase().getVisibleStrandCount() == 0)
+            return;
 
         float[] tempTint = hexToRGB(character.getHairColor());
         if (character.hasActiveForm() && character.getActiveFormData() != null) {
@@ -222,7 +258,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
             String hairPath = "textures/entity/races/hair_base.png";
 
-            renderColoredLayer(model, poseStack, animatable, bufferSource, hairPath, hairTint, partialTick, packedLight, packedOverlay);
+            renderColoredLayer(model, poseStack, animatable, bufferSource, hairPath, hairTint, partialTick, packedLight,
+                    packedOverlay);
 
             for (GeoBone bone : model.topLevelBones()) {
                 if (hiddenBones.contains(bone.getName())) {
@@ -237,38 +274,50 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         });
     }
 
-	private void renderAndroid(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
-		var character = stats.getCharacter();
-		String raceName = character.getRace().toLowerCase();
-		String currentForm = character.getActiveForm();
-		// Luego podemos hacer q el FusedAndroid (Super A13) no tenga el layer del Android, si no q tenga directamente otra skin idk
+    private void renderAndroid(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource,
+            AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
+        var character = stats.getCharacter();
+        String raceName = character.getRace().toLowerCase();
+        String currentForm = character.getActiveForm();
+        // Luego podemos hacer q el FusedAndroid (Super A13) no tenga el layer del
+        // Android, si no q tenga directamente otra skin idk
 
-		if (!raceName.equals("human")) return;
-		if (!stats.getStatus().isAndroidUpgraded()) return;
+        if (!raceName.equals("human"))
+            return;
+        if (!stats.getStatus().isAndroidUpgraded())
+            return;
 
-		String androidPath = "";
-		if (character.getGender().equals(Character.GENDER_FEMALE)) androidPath = "textures/entity/races/female_android.png";
-		else androidPath = "textures/entity/races/male_android.png";
+        String androidPath = "";
+        if (character.getGender().equals(Character.GENDER_FEMALE))
+            androidPath = "textures/entity/races/female_android.png";
+        else
+            androidPath = "textures/entity/races/male_android.png";
 
-		ResourceLocation androidLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, androidPath);
+        ResourceLocation androidLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, androidPath);
 
-		if (textureExists(androidLoc)) {
-			renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(androidLoc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay);
-		}
-	}
-    private void renderSpecializedRace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String race, String form, int bodyType, boolean hasForm, float[] b1, float[] b2, float[] b3, float[] h, float pt, int pl, int po) {
+        if (textureExists(androidLoc)) {
+            renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(androidLoc),
+                    1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay);
+        }
+    }
+
+    private void renderSpecializedRace(BakedGeoModel model, PoseStack poseStack, T animatable,
+            MultiBufferSource bufferSource, String race, String form, int bodyType, boolean hasForm, float[] b1,
+            float[] b2, float[] b3, float[] h, float pt, int pl, int po) {
         String filePrefix;
         boolean isFrost = race.equals("frostdemon");
         boolean isBio = race.equals("bioandroid");
         boolean isMajin = race.equals("majin");
         boolean isNamek = race.equals("namekian");
 
-        var stats = StatsProvider.get(StatsCapability.INSTANCE, (AbstractClientPlayer)animatable).orElse(null);
+        var stats = StatsProvider.get(StatsCapability.INSTANCE, (AbstractClientPlayer) animatable).orElse(null);
         String gender = (stats != null) ? stats.getCharacter().getGender().toLowerCase() : "male";
 
-        if (isFrost && (Objects.equals(form, FrostDemonForms.FINAL_FORM) || Objects.equals(form, FrostDemonForms.FULLPOWER))) {
+        if (isFrost && (Objects.equals(form, FrostDemonForms.FINAL_FORM)
+                || Objects.equals(form, FrostDemonForms.FULLPOWER))) {
             filePrefix = "textures/entity/races/" + race + "/finalform_bodytype_" + bodyType + "_";
-            renderFrostDemonFinalForm(model, poseStack, animatable, bufferSource, filePrefix, bodyType, b1, b2, b3, h, pt, pl, po);
+            renderFrostDemonFinalForm(model, poseStack, animatable, bufferSource, filePrefix, bodyType, b1, b2, b3, h,
+                    pt, pl, po);
         } else {
             if (isBio) {
                 String textureFormName = "base";
@@ -277,17 +326,14 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
                     if (f.equals(BioAndroidForms.SEMI_PERFECT)) {
                         textureFormName = "semiperfect";
-                    }
-                    else if (f.equals(BioAndroidForms.BASE)) {
+                    } else if (f.equals(BioAndroidForms.BASE)) {
                         textureFormName = "base";
-                    }
-                    else {
+                    } else {
                         textureFormName = "perfect";
                     }
                 }
                 filePrefix = "textures/entity/races/bioandroid/" + textureFormName + "_" + bodyType + "_";
-            }
-            else if (isMajin) {
+            } else if (isMajin) {
                 String f = (form == null || form.isEmpty()) ? "base" : form.toLowerCase();
 
                 boolean isStandardForm = f.equals("base") || f.equals("pure") || f.equals("kid") ||
@@ -303,17 +349,14 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
             else if (isNamek || !hasForm || (isFrost && Objects.equals(form, FrostDemonForms.SECOND_FORM))) {
                 filePrefix = "textures/entity/races/" + race + "/bodytype_" + bodyType + "_";
-            }
-            else {
+            } else {
                 String transformTexture = race;
                 if (isFrost) {
                     if (Objects.equals(form, FrostDemonForms.THIRD_FORM)) {
                         transformTexture = "thirdform_bodytype_" + bodyType;
-                    }
-                    else if (Objects.equals(form, FrostDemonForms.FIFTH_FORM)) {
+                    } else if (Objects.equals(form, FrostDemonForms.FIFTH_FORM)) {
                         transformTexture = "fifth_bodytype_" + bodyType;
-                    }
-                    else if (Objects.equals(form, "golden")) {
+                    } else if (Objects.equals(form, "golden")) {
                         transformTexture = "frostdemon_golden";
                     }
                 }
@@ -323,42 +366,47 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             float[] colorForLayer2 = b2;
             float[] colorForLayer3 = b3;
 
-
             if (isFrost && Objects.equals(form, FrostDemonForms.FIFTH_FORM)) {
 
                 if (bodyType == 0) {
                     colorForLayer2 = h;
-                }
-                else if (bodyType == 2) {
+                } else if (bodyType == 2) {
                     colorForLayer3 = h;
                 }
             }
 
-            renderStandardLayers(model, poseStack, animatable, bufferSource, filePrefix, isFrost, isBio, bodyType, b1, colorForLayer2, colorForLayer3, h, pt, pl, po);
+            renderStandardLayers(model, poseStack, animatable, bufferSource, filePrefix, isFrost, isBio, bodyType, b1,
+                    colorForLayer2, colorForLayer3, h, pt, pl, po);
         }
     }
 
-
-    private void renderTattoos(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
+    private void renderTattoos(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource,
+            AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
 
         if (stats.getEffects() != null && stats.getEffects().hasEffect("majin")) {
-            ResourceLocation majinMarkLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/majinm.png");
+            ResourceLocation majinMarkLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+                    "textures/entity/races/majinm.png");
             if (textureExists(majinMarkLoc)) {
-                renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(majinMarkLoc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay);
+                renderLayerWholeModel(model, poseStack, bufferSource, animatable,
+                        RenderType.entityTranslucent(majinMarkLoc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight,
+                        packedOverlay);
             }
         }
 
         int tattooType = stats.getCharacter().getTattooType();
-        if (tattooType == 0) return;
+        if (tattooType == 0)
+            return;
 
-        ResourceLocation tattooLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/tattoos/tattoo_" + tattooType + ".png");
+        ResourceLocation tattooLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+                "textures/entity/races/tattoos/tattoo_" + tattooType + ".png");
         if (textureExists(tattooLoc)) {
-            renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(tattooLoc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay);
+            renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(tattooLoc),
+                    1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay);
         }
     }
 
-
-    private void renderFace(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
+    private void renderFace(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource,
+            AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
         var character = stats.getCharacter();
         String raceName = character.getRace().toLowerCase();
         String currentForm = character.getActiveForm();
@@ -366,15 +414,15 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         if (raceName.equals("saiyan") && Objects.equals(currentForm, SaiyanForms.OOZARU)
                 || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)) {
-            renderColoredLayer(model, poseStack, animatable, bufferSource, "textures/entity/races/humansaiyan/oozaru_layer3.png", new float[]{1.0f, 1.0f, 1.0f}, partialTick, packedLight, packedOverlay);
+            renderColoredLayer(model, poseStack, animatable, bufferSource,
+                    "textures/entity/races/humansaiyan/oozaru_layer3.png", new float[] { 1.0f, 1.0f, 1.0f },
+                    partialTick, packedLight, packedOverlay);
             return;
         }
 
         if ((raceName.equals("human") || raceName.equals("saiyan")) && bodyType == 0) {
             return;
         }
-
-
 
         model.getBone("head").ifPresent(headBone -> {
             float originalZ = headBone.getPosZ();
@@ -388,7 +436,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             headBone.setScaleY(originalSY + inflation);
             headBone.setScaleZ(originalSZ + inflation);
 
-            renderFaceLayers(model, poseStack, animatable, bufferSource, character, stats, raceName, currentForm, bodyType, partialTick, packedLight, packedOverlay);
+            renderFaceLayers(model, poseStack, animatable, bufferSource, character, stats, raceName, currentForm,
+                    bodyType, partialTick, packedLight, packedOverlay);
 
             headBone.setPosZ(originalZ);
             headBone.setScaleX(originalSX);
@@ -397,7 +446,9 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         });
     }
 
-    private void renderFaceLayers(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, StatsData stats, String raceName, String currentForm, int bodyType, float pt, int pl, int po) {
+    private void renderFaceLayers(BakedGeoModel model, PoseStack poseStack, T animatable,
+            MultiBufferSource bufferSource, Character character, StatsData stats, String raceName, String currentForm,
+            int bodyType, float pt, int pl, int po) {
         float[] eye1 = hexToRGB(character.getEye1Color());
         float[] eye2 = hexToRGB(character.getEye2Color());
         float[] hair = hexToRGB(character.getHairColor());
@@ -406,14 +457,19 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         if (character.hasActiveForm() && character.getActiveFormData() != null) {
             var f = character.getActiveFormData();
-            if (!f.getEye1Color().isEmpty()) eye1 = hexToRGB(f.getEye1Color());
-            if (!f.getEye2Color().isEmpty()) eye2 = hexToRGB(f.getEye2Color());
-            if (!f.getHairColor().isEmpty()) hair = hexToRGB(f.getHairColor());
-            if (!f.getBodyColor1().isEmpty()) b1 = hexToRGB(f.getBodyColor1());
-            if (!f.getBodyColor2().isEmpty()) b2 = hexToRGB(f.getBodyColor2());
+            if (!f.getEye1Color().isEmpty())
+                eye1 = hexToRGB(f.getEye1Color());
+            if (!f.getEye2Color().isEmpty())
+                eye2 = hexToRGB(f.getEye2Color());
+            if (!f.getHairColor().isEmpty())
+                hair = hexToRGB(f.getHairColor());
+            if (!f.getBodyColor1().isEmpty())
+                b1 = hexToRGB(f.getBodyColor1());
+            if (!f.getBodyColor2().isEmpty())
+                b2 = hexToRGB(f.getBodyColor2());
         }
 
-        // Ultra Instinct: override eye color to silver
+        // Ultra Instinct: color de ojos
         if (stats.getStatus().isUltraInstinctActive()) {
             eye1 = hexToRGB("#C0C0C0");
             eye2 = hexToRGB("#E8E8E8");
@@ -423,12 +479,15 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
                 raceName.equals("human") || raceName.equals("saiyan")) ? b1 : b2;
 
         if (raceName.equals("frostdemon")) {
-            boolean isFinal = Objects.equals(currentForm, FrostDemonForms.FINAL_FORM) || Objects.equals(currentForm, FrostDemonForms.FULLPOWER);
-            if (isFinal && (bodyType == 0 || bodyType == 2)) skinTint = b1;
+            boolean isFinal = Objects.equals(currentForm, FrostDemonForms.FINAL_FORM)
+                    || Objects.equals(currentForm, FrostDemonForms.FULLPOWER);
+            if (isFinal && (bodyType == 0 || bodyType == 2))
+                skinTint = b1;
         }
 
-        String folder = "textures/entity/races/" + ((raceName.equals("human") || raceName.equals("saiyan")) ? "humansaiyan" : raceName) + "/faces/";
-        float[] white = {1.0f, 1.0f, 1.0f}, black = {0.0f, 0.0f, 0.0f};
+        String folder = "textures/entity/races/"
+                + ((raceName.equals("human") || raceName.equals("saiyan")) ? "humansaiyan" : raceName) + "/faces/";
+        float[] white = { 1.0f, 1.0f, 1.0f }, black = { 0.0f, 0.0f, 0.0f };
 
         if (raceName.equals("bioandroid")) {
             String fP = "base";
@@ -438,11 +497,9 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
                 if (f.equals(BioAndroidForms.SEMI_PERFECT)) {
                     fP = "semiperfect";
-                }
-                else if (f.equals(BioAndroidForms.BASE) || f.equals("imperfect")) {
+                } else if (f.equals(BioAndroidForms.BASE) || f.equals("imperfect")) {
                     fP = "base";
-                }
-                else {
+                } else {
                     fP = "perfect";
                 }
             }
@@ -451,8 +508,10 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
             float[] colorLayer1 = eye2;
 
-            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "bioandroid_" + fP + "_eye_layer0.png", colorLayer0, pt, pl, po);
-            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "bioandroid_" + fP + "_eye_layer1.png", colorLayer1, pt, pl, po);
+            renderColoredLayer(model, poseStack, animatable, bufferSource,
+                    folder + "bioandroid_" + fP + "_eye_layer0.png", colorLayer0, pt, pl, po);
+            renderColoredLayer(model, poseStack, animatable, bufferSource,
+                    folder + "bioandroid_" + fP + "_eye_layer1.png", colorLayer1, pt, pl, po);
         }
 
         else if (raceName.equals("frostdemon")) {
@@ -464,44 +523,61 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
                 eyeScleraColor = hexToRGB("#D91E1E");
             }
 
-            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_0.png", eyeScleraColor, pt, pl, po);
-            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_1.png", eye1, pt, pl, po);
-            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_2.png", eye2, pt, pl, po);
+            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_0.png", eyeScleraColor,
+                    pt, pl, po);
+            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_1.png", eye1, pt, pl,
+                    po);
+            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_2.png", eye2, pt, pl,
+                    po);
 
-        }
-        else if (raceName.equals("majin")) {
+        } else if (raceName.equals("majin")) {
             String mEye = "majin_eye_" + character.getEyesType();
             if (character.getEyesType() == 0) {
-                renderColoredLayer(model, poseStack, animatable, bufferSource, folder + mEye + "_0.png", skinTint, pt, pl, po);
-                renderColoredLayer(model, poseStack, animatable, bufferSource, folder + mEye + "_1.png", skinTint, pt, pl, po);
-                renderColoredLayer(model, poseStack, animatable, bufferSource, folder + mEye + "_2.png", skinTint, pt, pl, po);
+                renderColoredLayer(model, poseStack, animatable, bufferSource, folder + mEye + "_0.png", skinTint, pt,
+                        pl, po);
+                renderColoredLayer(model, poseStack, animatable, bufferSource, folder + mEye + "_1.png", skinTint, pt,
+                        pl, po);
+                renderColoredLayer(model, poseStack, animatable, bufferSource, folder + mEye + "_2.png", skinTint, pt,
+                        pl, po);
             } else {
-                renderColoredLayer(model, poseStack, animatable, bufferSource, folder + mEye + "_0.png", black, pt, pl, po);
-                renderColoredLayer(model, poseStack, animatable, bufferSource, folder + mEye + "_1.png", eye1, pt, pl, po);
-                renderColoredLayer(model, poseStack, animatable, bufferSource, folder + mEye + "_2.png", skinTint, pt, pl, po);
+                renderColoredLayer(model, poseStack, animatable, bufferSource, folder + mEye + "_0.png", black, pt, pl,
+                        po);
+                renderColoredLayer(model, poseStack, animatable, bufferSource, folder + mEye + "_1.png", eye1, pt, pl,
+                        po);
+                renderColoredLayer(model, poseStack, animatable, bufferSource, folder + mEye + "_2.png", skinTint, pt,
+                        pl, po);
             }
-        }
-        else {
-            String eyeBase = (raceName.equals("human") || raceName.equals("saiyan") ? "humansaiyan" : raceName) + "_eye_" + character.getEyesType();
-            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_0.png", white, pt, pl, po);
-            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_1.png", eye1, pt, pl, po);
-            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_2.png", eye2, pt, pl, po);
+        } else {
+            String eyeBase = (raceName.equals("human") || raceName.equals("saiyan") ? "humansaiyan" : raceName)
+                    + "_eye_" + character.getEyesType();
+            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_0.png", white, pt, pl,
+                    po);
+            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_1.png", eye1, pt, pl,
+                    po);
+            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_2.png", eye2, pt, pl,
+                    po);
 
-            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_3.png", hair, pt, pl, po);
+            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_3.png", hair, pt, pl,
+                    po);
         }
 
         String prefix = (raceName.equals("human") || raceName.equals("saiyan")) ? "humansaiyan" : raceName;
-        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "_nose_" + character.getNoseType() + ".png", skinTint, pt, pl, po);
+        renderColoredLayer(model, poseStack, animatable, bufferSource,
+                folder + prefix + "_nose_" + character.getNoseType() + ".png", skinTint, pt, pl, po);
 
         if (raceName.equals("frostdemon") && Objects.equals(currentForm, FrostDemonForms.FIFTH_FORM)) {
-            renderColoredLayer(model, poseStack, animatable, bufferSource, "textures/entity/races/frostdemon/faces/frostdemon_fifth_mouth.png", b1, pt, pl, po);
+            renderColoredLayer(model, poseStack, animatable, bufferSource,
+                    "textures/entity/races/frostdemon/faces/frostdemon_fifth_mouth.png", b1, pt, pl, po);
         } else {
-            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "_mouth_" + character.getMouthType() + ".png", skinTint, pt, pl, po);
+            renderColoredLayer(model, poseStack, animatable, bufferSource,
+                    folder + prefix + "_mouth_" + character.getMouthType() + ".png", skinTint, pt, pl, po);
         }
 
     }
 
-    private void renderLayerWholeModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float scaleInflation, float partialTick, int packedLight, int packedOverlay, float alpha) {
+    private void renderLayerWholeModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource,
+            T animatable, RenderType renderType, float r, float g, float b, float scaleInflation, float partialTick,
+            int packedLight, int packedOverlay, float alpha) {
 
         if (this.currentKaiokenPhase > 0) {
             float intensity = Math.min(0.6f, this.currentKaiokenPhase * 0.1f);
@@ -512,25 +588,35 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         }
 
         poseStack.pushPose();
-        if (scaleInflation > 1.0f) poseStack.scale(scaleInflation, scaleInflation, scaleInflation);
+        if (scaleInflation > 1.0f)
+            poseStack.scale(scaleInflation, scaleInflation, scaleInflation);
 
-        getRenderer().reRender(model, poseStack, bufferSource, animatable, renderType, bufferSource.getBuffer(renderType), partialTick, packedLight, packedOverlay, r, g, b, alpha);
+        getRenderer().reRender(model, poseStack, bufferSource, animatable, renderType,
+                bufferSource.getBuffer(renderType), partialTick, packedLight, packedOverlay, r, g, b, alpha);
 
         poseStack.popPose();
     }
 
-    private void renderLayerWholeModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float scaleInflation, float partialTick, int packedLight, int packedOverlay) {
-        renderLayerWholeModel(model, poseStack, bufferSource, animatable, renderType, r, g, b, scaleInflation, partialTick, packedLight, packedOverlay, 1.0F);
+    private void renderLayerWholeModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource,
+            T animatable, RenderType renderType, float r, float g, float b, float scaleInflation, float partialTick,
+            int packedLight, int packedOverlay) {
+        renderLayerWholeModel(model, poseStack, bufferSource, animatable, renderType, r, g, b, scaleInflation,
+                partialTick, packedLight, packedOverlay, 1.0F);
     }
 
-    private void renderColoredLayer(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String path, float[] rgb, float partialTick, int packedLight, int packedOverlay) {
+    private void renderColoredLayer(BakedGeoModel model, PoseStack poseStack, T animatable,
+            MultiBufferSource bufferSource, String path, float[] rgb, float partialTick, int packedLight,
+            int packedOverlay) {
         ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path);
         if (textureExists(loc)) {
-            renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityCutoutNoCull(loc), rgb[0], rgb[1], rgb[2], 1.0f, partialTick, packedLight, packedOverlay);
+            renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityCutoutNoCull(loc),
+                    rgb[0], rgb[1], rgb[2], 1.0f, partialTick, packedLight, packedOverlay);
         }
     }
 
-    private void renderStandardLayers(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String prefix, boolean isFrost, boolean isBio, int bodyType, float[] b1, float[] b2, float[] b3, float[] h, float pt, int pl, int po) {
+    private void renderStandardLayers(BakedGeoModel model, PoseStack poseStack, T animatable,
+            MultiBufferSource bufferSource, String prefix, boolean isFrost, boolean isBio, int bodyType, float[] b1,
+            float[] b2, float[] b3, float[] h, float pt, int pl, int po) {
         renderColoredLayer(model, poseStack, animatable, bufferSource, prefix + "layer1.png", b1, pt, pl, po);
         renderColoredLayer(model, poseStack, animatable, bufferSource, prefix + "layer2.png", b2, pt, pl, po);
         renderColoredLayer(model, poseStack, animatable, bufferSource, prefix + "layer3.png", b3, pt, pl, po);
@@ -540,11 +626,14 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         }
 
         if (isBio || (isFrost && bodyType == 0)) {
-            renderColoredLayer(model, poseStack, animatable, bufferSource, prefix + "layer5.png", hexToRGB("#e67d40"), pt, pl, po);
+            renderColoredLayer(model, poseStack, animatable, bufferSource, prefix + "layer5.png", hexToRGB("#e67d40"),
+                    pt, pl, po);
         }
     }
 
-    private void renderFrostDemonFinalForm(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String prefix, int bodyType, float[] b1, float[] b2, float[] b3, float[] h, float pt, int pl, int po) {
+    private void renderFrostDemonFinalForm(BakedGeoModel model, PoseStack poseStack, T animatable,
+            MultiBufferSource bufferSource, String prefix, int bodyType, float[] b1, float[] b2, float[] b3, float[] h,
+            float pt, int pl, int po) {
         if (bodyType == 0) {
             renderColoredLayer(model, poseStack, animatable, bufferSource, prefix + "layer1.png", b1, pt, pl, po);
             renderColoredLayer(model, poseStack, animatable, bufferSource, prefix + "layer2.png", h, pt, pl, po);
@@ -569,7 +658,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
     }
 
     private boolean textureExists(ResourceLocation location) {
-        return TEXTURE_CACHE.computeIfAbsent(location, loc -> Minecraft.getInstance().getResourceManager().getResource(loc).isPresent());
+        return TEXTURE_CACHE.computeIfAbsent(location,
+                loc -> Minecraft.getInstance().getResourceManager().getResource(loc).isPresent());
     }
 
     private float[] hexToRGB(String hexColor) {

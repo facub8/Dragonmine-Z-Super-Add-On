@@ -41,36 +41,55 @@ public class ExecuteActionC2S {
 					boolean needsSync = false;
 					switch (action) {
 						case "descend" -> {
-							if (data.getSkills().isSkillActive("kaioken") && data.getStatus().getActiveKaiokenPhase() != 0) {
-								if (data.getStatus().getActiveKaiokenPhase() <= 0 || data.getStatus().getActiveKaiokenPhase() - 1 <= 0) data.getSkills().setSkillActive("kaioken", false);
+							if (data.getSkills().isSkillActive("kaioken")
+									&& data.getStatus().getActiveKaiokenPhase() != 0) {
+								if (data.getStatus().getActiveKaiokenPhase() <= 0
+										|| data.getStatus().getActiveKaiokenPhase() - 1 <= 0)
+									data.getSkills().setSkillActive("kaioken", false);
 								data.getStatus().setActiveKaiokenPhase(data.getStatus().getActiveKaiokenPhase() - 1);
-							} else if (data.getStatus().isUltraInstinctActive() && data.getStatus().getSelectedAction() == ActionMode.ULTRA_INSTINCT) {
+							} else if (data.getStatus().isUltraInstinctActive()
+									&& data.getStatus().getSelectedAction() == ActionMode.ULTRA_INSTINCT) { // Desactivar
+																											// Ultra
+																											// Instinto
 								data.getStatus().setUltraInstinctActive(false);
-								player.displayClientMessage(Component.translatable("message.dragonminez.ultrainstinct.deactivate"), true);
+								player.displayClientMessage(
+										Component.translatable("message.dragonminez.ultrainstinct.deactivate"), true);
 							} else if (TransformationsHelper.canDescend(data)) {
 								FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
 								if (previousForm != null) {
-									data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
+									data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(),
+											previousForm.getName());
 								} else {
-									if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
-									else data.getCharacter().clearActiveForm();
+									if (data.getStatus().isAndroidUpgraded())
+										data.getCharacter().setActiveForm("androidforms", "androidbase");
+									else
+										data.getCharacter().clearActiveForm();
 								}
-							} else data.getResources().setPowerRelease(0);
+							} else
+								data.getResources().setPowerRelease(0);
 							needsSync = true;
 						}
 						case "force_descend" -> {
-							if (data.getSkills().isSkillActive("kaioken") && data.getStatus().getActiveKaiokenPhase() != 0) {
-								if (data.getStatus().getActiveKaiokenPhase() <= 0 || data.getStatus().getActiveKaiokenPhase() - 1 <= 0) data.getSkills().setSkillActive("kaioken", false);
+							if (data.getSkills().isSkillActive("kaioken")
+									&& data.getStatus().getActiveKaiokenPhase() != 0) {
+								if (data.getStatus().getActiveKaiokenPhase() <= 0
+										|| data.getStatus().getActiveKaiokenPhase() - 1 <= 0)
+									data.getSkills().setSkillActive("kaioken", false);
 								data.getStatus().setActiveKaiokenPhase(data.getStatus().getActiveKaiokenPhase() - 1);
 							} else {
 								FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
 								if (previousForm != null) {
-									data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
+									data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(),
+											previousForm.getName());
 								} else {
-									if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
-									else data.getCharacter().clearActiveForm();
+									if (data.getStatus().isAndroidUpgraded())
+										data.getCharacter().setActiveForm("androidforms", "androidbase");
+									else
+										data.getCharacter().clearActiveForm();
 								}
-								if (data.getCharacter().getActiveForm().isEmpty() || (data.getStatus().isAndroidUpgraded() && "androidbase".equalsIgnoreCase(data.getCharacter().getActiveForm()))) {
+								if (data.getCharacter().getActiveForm().isEmpty()
+										|| (data.getStatus().isAndroidUpgraded() && "androidbase"
+												.equalsIgnoreCase(data.getCharacter().getActiveForm()))) {
 									data.getResources().setPowerRelease(0);
 								}
 							}
@@ -84,9 +103,12 @@ public class ExecuteActionC2S {
 						case "instant_transform" -> {
 							FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data);
 							if (nextForm != null) {
-								String group = data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup() : data.getCharacter().getSelectedFormGroup();
+								String group = data.getCharacter().hasActiveForm()
+										? data.getCharacter().getActiveFormGroup()
+										: data.getCharacter().getSelectedFormGroup();
 
-								double mastery = data.getCharacter().getFormMasteries().getMastery(group, nextForm.getName());
+								double mastery = data.getCharacter().getFormMasteries().getMastery(group,
+										nextForm.getName());
 								double maxMastery = nextForm.getMaxMastery();
 
 								if (mastery >= (maxMastery * 0.25)) {
@@ -97,7 +119,9 @@ public class ExecuteActionC2S {
 										data.getCharacter().setActiveForm(group, nextForm.getName());
 										needsSync = true;
 									} else {
-										player.displayClientMessage(Component.translatable("message.dragonminez.form.no_ki_instant", cost), true);
+										player.displayClientMessage(
+												Component.translatable("message.dragonminez.form.no_ki_instant", cost),
+												true);
 									}
 								}
 							}

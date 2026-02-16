@@ -47,25 +47,27 @@ import java.util.*;
 public class TickHandler {
 
 	private static final UUID STUN_SLOW_UUID = UUID.fromString("7107DE5E-7CE8-4030-940E-514C1F160890");
-    private static final int REGEN_INTERVAL = 20;
-    private static final int SYNC_INTERVAL = 10;
-    private static final double MEDITATION_BONUS_PER_LEVEL = 0.025;
-    private static final double ACTIVE_CHARGE_MULTIPLIER = 1.5;
+	private static final int REGEN_INTERVAL = 20;
+	private static final int SYNC_INTERVAL = 10;
+	private static final double MEDITATION_BONUS_PER_LEVEL = 0.025;
+	private static final double ACTIVE_CHARGE_MULTIPLIER = 1.5;
 	private static int saiyanZenkaiSeconds = 0;
 
-    private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
+	private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
 
-    @SubscribeEvent
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) return;
-        if (!(event.player instanceof ServerPlayer serverPlayer)) return;
+	@SubscribeEvent
+	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+		if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide)
+			return;
+		if (!(event.player instanceof ServerPlayer serverPlayer))
+			return;
 
+		UUID playerId = serverPlayer.getUUID();
+		int tickCounter = playerTickCounters.getOrDefault(playerId, 0) + 1;
 
-        UUID playerId = serverPlayer.getUUID();
-        int tickCounter = playerTickCounters.getOrDefault(playerId, 0) + 1;
-
-        StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
-            if (!data.getStatus().hasCreatedCharacter()) return;
+		StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
+			if (!data.getStatus().hasCreatedCharacter())
+				return;
 
 			handleBioDrainTick(serverPlayer, data);
 
@@ -73,45 +75,49 @@ public class TickHandler {
 				data.getStatus().setChargingKi(false);
 				data.getStatus().setActionCharging(false);
 				data.getResources().setActionCharge(0);
-				if (!data.getStatus().isStunned()) data.getStatus().setStunned(true);
+				if (!data.getStatus().isStunned())
+					data.getStatus().setStunned(true);
 
 				data.getCooldowns().tick();
 				data.getEffects().tick();
-				if (serverPlayer.tickCount % SYNC_INTERVAL == 0) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+				if (serverPlayer.tickCount % SYNC_INTERVAL == 0)
+					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 				return;
 			} else {
 				data.getCooldowns().tick();
 				data.getEffects().tick();
-				if (data.getStatus().isStunned()) data.getStatus().setStunned(false);
+				if (data.getStatus().isStunned())
+					data.getStatus().setStunned(false);
 			}
 
-            boolean shouldRegen = tickCounter >= REGEN_INTERVAL;
-            boolean shouldSync = tickCounter % SYNC_INTERVAL == 0;
-            boolean isChargingKi = data.getStatus().isChargingKi();
-            boolean isDescending = data.getStatus().isDescending();
-            int meditationLevel = data.getSkills().getSkillLevel("meditation");
+			boolean shouldRegen = tickCounter >= REGEN_INTERVAL;
+			boolean shouldSync = tickCounter % SYNC_INTERVAL == 0;
+			boolean isChargingKi = data.getStatus().isChargingKi();
+			boolean isDescending = data.getStatus().isDescending();
+			int meditationLevel = data.getSkills().getSkillLevel("meditation");
 
-            if (shouldRegen) {
-                String raceName = data.getCharacter().getRaceName();
-                String characterClass = data.getCharacter().getCharacterClass();
-                
-                RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
-                if (raceConfig != null) {
-                    RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
-                    
-                    double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * MEDITATION_BONUS_PER_LEVEL) : 1.0;
-                    boolean activeCharging = isChargingKi && !isDescending;
-                    
-                    regenerateHealth(serverPlayer, data, classStats);
-                    regenerateEnergy(serverPlayer, data, classStats, meditationBonus, activeCharging);
-                    regenerateStamina(data, classStats, meditationBonus);
+			if (shouldRegen) {
+				String raceName = data.getCharacter().getRaceName();
+				String characterClass = data.getCharacter().getCharacterClass();
+
+				RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
+				if (raceConfig != null) {
+					RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
+
+					double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * MEDITATION_BONUS_PER_LEVEL)
+							: 1.0;
+					boolean activeCharging = isChargingKi && !isDescending;
+
+					regenerateHealth(serverPlayer, data, classStats);
+					regenerateEnergy(serverPlayer, data, classStats, meditationBonus, activeCharging);
+					regenerateStamina(data, classStats, meditationBonus);
 					regeneratePoise(data, meditationBonus);
-                }
+				}
 
-                playerTickCounters.put(playerId, 0);
-            } else {
-                playerTickCounters.put(playerId, tickCounter);
-            }
+				playerTickCounters.put(playerId, 0);
+			} else {
+				playerTickCounters.put(playerId, tickCounter);
+			}
 
 			if (isChargingKi && tickCounter % 20 == 0) {
 				int currentRelease = data.getResources().getPowerRelease();
@@ -128,7 +134,10 @@ public class TickHandler {
 				}
 			}
 
-			if (isChargingKi || (data.getStatus().isActionCharging() && (data.getStatus().getSelectedAction() == ActionMode.FORM || data.getStatus().getSelectedAction() == ActionMode.KAIOKEN || data.getStatus().getSelectedAction() == ActionMode.GODFORMS))) {
+			if (isChargingKi
+					|| (data.getStatus().isActionCharging() && (data.getStatus().getSelectedAction() == ActionMode.FORM
+							|| data.getStatus().getSelectedAction() == ActionMode.KAIOKEN
+							|| data.getStatus().getSelectedAction() == ActionMode.GODFORMS))) {
 				data.getStatus().setAuraActive(true);
 			} else {
 				data.getStatus().setAuraActive(false);
@@ -149,24 +158,31 @@ public class TickHandler {
 						float finalPct = (float) Mth.lerp(factor, 0.05f, 0.35f);
 						float damage = maxHealth * finalPct;
 						serverPlayer.hurt(serverPlayer.damageSources().flyIntoWall(), damage);
-						serverPlayer.level().playSound(null, serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(), SoundEvents.PLAYER_HURT, SoundSource.PLAYERS, 1.0F, (float) (0.5F + (factor * 0.5F)));
+						serverPlayer.level().playSound(null, serverPlayer.getX(), serverPlayer.getY(),
+								serverPlayer.getZ(), SoundEvents.PLAYER_HURT, SoundSource.PLAYERS, 1.0F,
+								(float) (0.5F + (factor * 0.5F)));
 					}
 				}
 			}
 
 			if (tickCounter % 5 == 0) {
 				boolean hasYajirobe = serverPlayer.getInventory().hasAnyOf(Set.of(MainItems.KATANA_YAJIROBE.get()));
-				boolean holdingYajirobe = serverPlayer.getMainHandItem().getItem() == MainItems.KATANA_YAJIROBE.get() || serverPlayer.getOffhandItem().getItem() == MainItems.KATANA_YAJIROBE.get();
-				if (data.getStatus().isRenderKatana() != (hasYajirobe && !holdingYajirobe)) data.getStatus().setRenderKatana(hasYajirobe && !holdingYajirobe);
+				boolean holdingYajirobe = serverPlayer.getMainHandItem().getItem() == MainItems.KATANA_YAJIROBE.get()
+						|| serverPlayer.getOffhandItem().getItem() == MainItems.KATANA_YAJIROBE.get();
+				if (data.getStatus().isRenderKatana() != (hasYajirobe && !holdingYajirobe))
+					data.getStatus().setRenderKatana(hasYajirobe && !holdingYajirobe);
 
 				ItemStack backItem = ItemStack.EMPTY;
 				for (int i = 0; i < serverPlayer.getInventory().getContainerSize(); i++) {
 					ItemStack stack = serverPlayer.getInventory().getItem(i);
-					if (stack.isEmpty()) continue;
+					if (stack.isEmpty())
+						continue;
 					Item item = stack.getItem();
 
-					if (item == MainItems.Z_SWORD.get() || item == MainItems.BRAVE_SWORD.get() || item == MainItems.POWER_POLE.get()) {
-						boolean isHeld = serverPlayer.getMainHandItem().getItem() == item || serverPlayer.getOffhandItem().getItem() == item;
+					if (item == MainItems.Z_SWORD.get() || item == MainItems.BRAVE_SWORD.get()
+							|| item == MainItems.POWER_POLE.get()) {
+						boolean isHeld = serverPlayer.getMainHandItem().getItem() == item
+								|| serverPlayer.getOffhandItem().getItem() == item;
 						if (!isHeld) {
 							backItem = item.getDefaultInstance();
 							break;
@@ -175,14 +191,19 @@ public class TickHandler {
 				}
 
 				if (backItem != ItemStack.EMPTY) {
-					if (!data.getStatus().getBackWeapon().equals(backItem.getDescriptionId())) data.getStatus().setBackWeapon(backItem.getDescriptionId());
-				} else data.getStatus().setBackWeapon("");
+					if (!data.getStatus().getBackWeapon().equals(backItem.getDescriptionId()))
+						data.getStatus().setBackWeapon(backItem.getDescriptionId());
+				} else
+					data.getStatus().setBackWeapon("");
 
-				boolean hasScouter = serverPlayer.getItemBySlot(EquipmentSlot.HEAD).getDescriptionId().contains("scouter");
+				boolean hasScouter = serverPlayer.getItemBySlot(EquipmentSlot.HEAD).getDescriptionId()
+						.contains("scouter");
 				if (hasScouter) {
 					String scouterItem = serverPlayer.getItemBySlot(EquipmentSlot.HEAD).getDescriptionId();
-					if (!data.getStatus().getScouterItem().equals(scouterItem)) data.getStatus().setScouterItem(scouterItem);
-				} else if (!data.getStatus().getScouterItem().isEmpty()) data.getStatus().setScouterItem("");
+					if (!data.getStatus().getScouterItem().equals(scouterItem))
+						data.getStatus().setScouterItem(scouterItem);
+				} else if (!data.getStatus().getScouterItem().isEmpty())
+					data.getStatus().setScouterItem("");
 
 			}
 
@@ -192,19 +213,23 @@ public class TickHandler {
 				handleFlightKiDrain(serverPlayer, data);
 				GravityLogic.tick(serverPlayer);
 				if (ConfigManager.getServerConfig().getWorldGen().isOtherworldActive()) {
-					if (!data.getStatus().isAlive() && !serverPlayer.serverLevel().dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) {
+					if (!data.getStatus().isAlive()
+							&& !serverPlayer.serverLevel().dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) {
 						if (!serverPlayer.isSpectator() && !serverPlayer.isCreative()) {
-							ServerLevel otherworld = serverPlayer.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
+							ServerLevel otherworld = serverPlayer.getServer()
+									.getLevel(OtherworldDimension.OTHERWORLD_KEY);
 							serverPlayer.teleportTo(otherworld, 0, 41, 10, 0, 0);
 						}
 					}
 				}
 
-				if (data.getStatus().isAndroidUpgraded() && (data.getCharacter().getActiveForm().isEmpty() || data.getCharacter().getActiveForm() == null))
+				if (data.getStatus().isAndroidUpgraded() && (data.getCharacter().getActiveForm().isEmpty()
+						|| data.getCharacter().getActiveForm() == null))
 					data.getCharacter().setActiveForm("androidforms", "androidbase");
 			}
 
-			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isSaiyanRacialSkill()) {
+			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills()
+					&& ConfigManager.getServerConfig().getRacialSkills().isSaiyanRacialSkill()) {
 				if (tickCounter % 20 == 0 && data.getCharacter().getRaceName().equals("saiyan")) {
 					handleSaiyanPassive(serverPlayer, data);
 				}
@@ -214,122 +239,135 @@ public class TickHandler {
 			handleStatusEffects(serverPlayer, data);
 			handleUltraInstinctEffects(serverPlayer, data);
 
-            if (shouldSync) {
-                NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
-            }
-        });
-    }
+			if (shouldSync) {
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+			}
+		});
+	}
 
-    @SubscribeEvent
-    public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-        playerTickCounters.remove(event.getEntity().getUUID());
-    }
+	@SubscribeEvent
+	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+		playerTickCounters.remove(event.getEntity().getUUID());
+	}
 
-    private static RaceStatsConfig.ClassStats getClassStats(RaceStatsConfig config, String characterClass) {
-        return switch (characterClass.toLowerCase()) {
-            case "warrior" -> config.getWarrior();
-            case "spiritualist" -> config.getSpiritualist();
-            case "martialartist", "martial_artist" -> config.getMartialArtist();
-            default -> config.getWarrior();
-        };
-    }
+	private static RaceStatsConfig.ClassStats getClassStats(RaceStatsConfig config, String characterClass) {
+		return switch (characterClass.toLowerCase()) {
+			case "warrior" -> config.getWarrior();
+			case "spiritualist" -> config.getSpiritualist();
+			case "martialartist", "martial_artist" -> config.getMartialArtist();
+			default -> config.getWarrior();
+		};
+	}
 
-    private static void regenerateHealth(ServerPlayer player, StatsData data, 
-                                        RaceStatsConfig.ClassStats classStats) {
-        int currentHealth = (int) player.getHealth();
-        float maxHealth = player.getMaxHealth();
-        
-        if (currentHealth < maxHealth && !data.getSkills().isSkillActive("kaioken")) {
-            double baseRegen = classStats.getHealthRegenRate();
-            double regenAmount = maxHealth * baseRegen;
-			if (regenAmount <= 1.0) return;
+	private static void regenerateHealth(ServerPlayer player, StatsData data,
+			RaceStatsConfig.ClassStats classStats) {
+		int currentHealth = (int) player.getHealth();
+		float maxHealth = player.getMaxHealth();
+
+		if (currentHealth < maxHealth && !data.getSkills().isSkillActive("kaioken")) {
+			double baseRegen = classStats.getHealthRegenRate();
+			double regenAmount = maxHealth * baseRegen;
+			if (regenAmount <= 1.0)
+				return;
 
 			float newHealth = (float) Math.min(maxHealth, currentHealth + Math.ceil(regenAmount));
-            player.setHealth(newHealth);
-        }
-    }
+			player.setHealth(newHealth);
+		}
+	}
 
-    private static void regenerateEnergy(ServerPlayer player, StatsData data,
-                                        RaceStatsConfig.ClassStats classStats, double meditationBonus, boolean activeCharging) {
-        int currentEnergy = data.getResources().getCurrentEnergy();
-        int maxEnergy = data.getMaxEnergy();
-        
-        boolean hasActiveForm = data.getCharacter().hasActiveForm();
-        FormConfig.FormData activeForm = hasActiveForm ? data.getCharacter().getActiveFormData() : null;
+	private static void regenerateEnergy(ServerPlayer player, StatsData data,
+			RaceStatsConfig.ClassStats classStats, double meditationBonus, boolean activeCharging) {
+		int currentEnergy = data.getResources().getCurrentEnergy();
+		int maxEnergy = data.getMaxEnergy();
 
-        double energyChange = 0;
+		boolean hasActiveForm = data.getCharacter().hasActiveForm();
+		FormConfig.FormData activeForm = hasActiveForm ? data.getCharacter().getActiveFormData() : null;
 
-        if (activeCharging) {
-            double baseRegen = classStats.getEnergyRegenRate();
-            double regenAmount = maxEnergy * baseRegen * meditationBonus * ACTIVE_CHARGE_MULTIPLIER;
-			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()) {
-				if (data.getCharacter().getRace().equals("human")) regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
+		double energyChange = 0;
+
+		if (activeCharging) {
+			double baseRegen = classStats.getEnergyRegenRate();
+			double regenAmount = maxEnergy * baseRegen * meditationBonus * ACTIVE_CHARGE_MULTIPLIER;
+			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills()
+					&& ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()) {
+				if (data.getCharacter().getRace().equals("human"))
+					regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
 			}
-			if (regenAmount <= 1.0) regenAmount = 0.5;
-            energyChange += regenAmount;
+			if (regenAmount <= 1.0)
+				regenAmount = 0.5;
+			energyChange += regenAmount;
 
-            DMZEvent.KiChargeEvent kiEvent = new DMZEvent.KiChargeEvent(player, currentEnergy, maxEnergy);
-            if (MinecraftForge.EVENT_BUS.post(kiEvent)) {
-                energyChange = 0;
-            }
-        } else if (!hasActiveForm && currentEnergy < maxEnergy) {
-            double baseRegen = classStats.getEnergyRegenRate();
-            double regenAmount = maxEnergy * baseRegen * meditationBonus;
-			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()) {
-				if (data.getCharacter().getRace().equals("human")) regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
+			DMZEvent.KiChargeEvent kiEvent = new DMZEvent.KiChargeEvent(player, currentEnergy, maxEnergy);
+			if (MinecraftForge.EVENT_BUS.post(kiEvent)) {
+				energyChange = 0;
 			}
-			if (regenAmount <= 1.0) regenAmount = 0.5;
-            energyChange += regenAmount;
-        }
+		} else if (!hasActiveForm && currentEnergy < maxEnergy) {
+			double baseRegen = classStats.getEnergyRegenRate();
+			double regenAmount = maxEnergy * baseRegen * meditationBonus;
+			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills()
+					&& ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()) {
+				if (data.getCharacter().getRace().equals("human"))
+					regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
+			}
+			if (regenAmount <= 1.0)
+				regenAmount = 0.5;
+			energyChange += regenAmount;
+		}
 
 		if (data.getStatus().isAndroidUpgraded()) {
 			double baseRegen = classStats.getEnergyRegenRate();
 			double regenAmount = maxEnergy * baseRegen * meditationBonus;
-			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()) {
-				if (data.getCharacter().getRace().equals("human")) regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
+			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills()
+					&& ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()) {
+				if (data.getCharacter().getRace().equals("human"))
+					regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
 			}
 			regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
-			if (regenAmount <= 1.0) regenAmount = 0.5;
+			if (regenAmount <= 1.0)
+				regenAmount = 0.5;
 			energyChange += regenAmount;
 		}
 
-        if (hasActiveForm && activeForm != null) {
-            if (!data.getStatus().isAndroidUpgraded()) {
-                double drainRate = data.getAdjustedEnergyDrain();
-                double drainAmount = maxEnergy * (drainRate / 100.0);
-                energyChange -= drainAmount;
-            }
-        }
+		if (hasActiveForm && activeForm != null) {
+			if (!data.getStatus().isAndroidUpgraded()) {
+				double drainRate = data.getAdjustedEnergyDrain();
+				double drainAmount = maxEnergy * (drainRate / 100.0);
+				energyChange -= drainAmount;
+			}
+		}
 
-        if (energyChange != 0) {
-            int newEnergy = (int) Math.max(0, Math.min(maxEnergy, currentEnergy + Math.ceil(energyChange)));
-            data.getResources().setCurrentEnergy(newEnergy);
+		if (energyChange != 0) {
+			int newEnergy = (int) Math.max(0, Math.min(maxEnergy, currentEnergy + Math.ceil(energyChange)));
+			data.getResources().setCurrentEnergy(newEnergy);
 
-            if (newEnergy <= maxEnergy * 0.05 && hasActiveForm && !data.getStatus().isAndroidUpgraded()) {
-                data.getCharacter().clearActiveForm();
+			if (newEnergy <= maxEnergy * 0.05 && hasActiveForm && !data.getStatus().isAndroidUpgraded()) {
+				data.getCharacter().clearActiveForm();
 				data.getResources().setPowerRelease(0);
 				data.getResources().setActionCharge(0);
-            }
-        }
-    }
+			}
+		}
+	}
 
-    private static void regenerateStamina(StatsData data,
-                                         RaceStatsConfig.ClassStats classStats, double meditationBonus) {
-        int currentStamina = data.getResources().getCurrentStamina();
-        int maxStamina = data.getMaxStamina();
-        
-        if (currentStamina < maxStamina) {
-            double baseRegen = classStats.getStaminaRegenRate();
-            double regenAmount = maxStamina * baseRegen * meditationBonus;
-			if (regenAmount <= 1.0) regenAmount = 0.5;
-            
-            int newStamina = (int) Math.min(maxStamina, currentStamina + Math.ceil(regenAmount));
-            data.getResources().setCurrentStamina(newStamina);
-        }
-    }
+	private static void regenerateStamina(StatsData data,
+			RaceStatsConfig.ClassStats classStats, double meditationBonus) {
+		int currentStamina = data.getResources().getCurrentStamina();
+		int maxStamina = data.getMaxStamina();
+
+		if (currentStamina < maxStamina) {
+			double baseRegen = classStats.getStaminaRegenRate();
+			double regenAmount = maxStamina * baseRegen * meditationBonus;
+			if (regenAmount <= 1.0)
+				regenAmount = 0.5;
+
+			int newStamina = (int) Math.min(maxStamina, currentStamina + Math.ceil(regenAmount));
+			data.getResources().setCurrentStamina(newStamina);
+		}
+	}
 
 	private static void regeneratePoise(StatsData data, double meditationBonus) {
-		if (data.getCooldowns().hasCooldown(Cooldowns.POISE_CD) || data.getStatus().isBlocking() || data.getStatus().isStunned()) return;
+		if (data.getCooldowns().hasCooldown(Cooldowns.POISE_CD) || data.getStatus().isBlocking()
+				|| data.getStatus().isStunned())
+			return;
 
 		int currentPoise = data.getResources().getCurrentPoise();
 		int maxPoise = data.getMaxPoise();
@@ -337,7 +375,8 @@ public class TickHandler {
 		if (currentPoise < maxPoise) {
 			double baseRegen = 0.1;
 			double regenAmount = maxPoise * baseRegen * meditationBonus;
-			if (regenAmount < 1.0) regenAmount = 1.0;
+			if (regenAmount < 1.0)
+				regenAmount = 1.0;
 			data.getResources().addPoise((int) regenAmount);
 		}
 	}
@@ -370,7 +409,8 @@ public class TickHandler {
 				}
 			}
 			case FUSION -> {
-				if (data.getSkills().hasSkill("fusion") && !data.getCooldowns().hasCooldown(Cooldowns.COMBAT) && !data.getCooldowns().hasCooldown(Cooldowns.FUSION_CD)) {
+				if (data.getSkills().hasSkill("fusion") && !data.getCooldowns().hasCooldown(Cooldowns.COMBAT)
+						&& !data.getCooldowns().hasCooldown(Cooldowns.FUSION_CD)) {
 					increment = 10;
 				}
 			}
@@ -387,7 +427,9 @@ public class TickHandler {
 				String groupOverride = (mode == ActionMode.GODFORMS) ? SaiyanForms.GROUP_GOD : null;
 				FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data, groupOverride);
 				if (nextForm != null) {
-					String group = groupOverride != null ? groupOverride : (data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup() : data.getCharacter().getSelectedFormGroup());
+					String group = groupOverride != null ? groupOverride
+							: (data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup()
+									: data.getCharacter().getSelectedFormGroup());
 
 					String type = ConfigManager.getFormGroup(data.getCharacter().getRaceName(), group).getFormType();
 					int skillLvl = switch (type) {
@@ -444,10 +486,12 @@ public class TickHandler {
 				if (currentPhase < maxPhase) {
 					data.getStatus().setActiveKaiokenPhase(currentPhase + 1);
 					String name = TransformationsHelper.getKaiokenName(currentPhase + 1);
-					player.displayClientMessage(Component.translatable("message.dragonminez.kaioken.activate", name), true);
+					player.displayClientMessage(Component.translatable("message.dragonminez.kaioken.activate", name),
+							true);
 				}
 
-				if (!data.getSkills().isSkillActive("kaioken")) data.getSkills().setSkillActive("kaioken", true);
+				if (!data.getSkills().isSkillActive("kaioken"))
+					data.getSkills().setSkillActive("kaioken", true);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 				return true;
 			}
@@ -467,8 +511,10 @@ public class TickHandler {
 				if (data.getSkills().getSkillLevel("ultrainstinct") >= 1) {
 					if (!data.getStatus().isUltraInstinctActive()) {
 						data.getStatus().setUltraInstinctActive(true);
-						player.displayClientMessage(Component.translatable("message.dragonminez.ultrainstinct.activate"), true);
-						player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+						player.displayClientMessage(
+								Component.translatable("message.dragonminez.ultrainstinct.activate"), true);
+						player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+								MainSounds.TRANSFORM.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 						return true;
 					}
@@ -479,8 +525,10 @@ public class TickHandler {
 	}
 
 	private static void handleKaiokenEffects(ServerPlayer player, StatsData data) {
-		if (!data.getSkills().isSkillActive("kaioken")) return;
-		if (player.isCreative() || player.isSpectator()) return;
+		if (!data.getSkills().isSkillActive("kaioken"))
+			return;
+		if (player.isCreative() || player.isSpectator())
+			return;
 
 		if (player.tickCount % 20 == 0) {
 			float drain = TransformationsHelper.getKaiokenHealthDrain(data);
@@ -499,26 +547,27 @@ public class TickHandler {
 		}
 	}
 
-
 	private static void attemptTransform(ServerPlayer player, StatsData data) {
 		attemptTransform(player, data, null);
 	}
 
 	private static void attemptTransform(ServerPlayer player, StatsData data, String groupOverride) {
 		FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data, groupOverride);
-		if (nextForm == null) return;
+		if (nextForm == null)
+			return;
 
 		int cost = (int) (data.getMaxEnergy() * nextForm.getEnergyDrain());
 		if (data.getResources().getCurrentEnergy() >= cost) {
 			data.getResources().removeEnergy(cost);
 
-			String group = groupOverride != null ? groupOverride : (data.getCharacter().hasActiveForm() ?
-					data.getCharacter().getActiveFormGroup() :
-					data.getCharacter().getSelectedFormGroup());
+			String group = groupOverride != null ? groupOverride
+					: (data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup()
+							: data.getCharacter().getSelectedFormGroup());
 
 			data.getCharacter().setActiveForm(group, nextForm.getName());
 
-            player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+			player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM.get(),
+					SoundSource.PLAYERS, 1.0F, 1.0F);
 		} else {
 			player.displayClientMessage(Component.translatable("message.dragonminez.form.no_ki", cost), true);
 		}
@@ -530,18 +579,22 @@ public class TickHandler {
 
 		for (ServerPlayer target : nearby) {
 			StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(targetData -> {
-				if (targetData.getStatus().getSelectedAction() == ActionMode.FUSION && targetData.getResources().getActionCharge() >= 50 && targetData.getStatus().isActionCharging()) {
+				if (targetData.getStatus().getSelectedAction() == ActionMode.FUSION
+						&& targetData.getResources().getActionCharge() >= 50
+						&& targetData.getStatus().isActionCharging()) {
 					if (data.getResources().getActionCharge() >= 100) {
 						if (FusionLogic.executeMetamoru(player, target, data, targetData)) {
 							data.getResources().setActionCharge(0);
 							targetData.getResources().setActionCharge(0);
 
-                            player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.FUSION.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+							player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+									MainSounds.FUSION.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 						}
 					}
 				}
 			});
-			if (data.getStatus().isFused()) return true;
+			if (data.getStatus().isFused())
+				return true;
 		}
 		return false;
 	}
@@ -549,8 +602,10 @@ public class TickHandler {
 	private static void handleSaiyanPassive(ServerPlayer player, StatsData data) {
 		GeneralServerConfig.RacialSkillsConfig config = ConfigManager.getServerConfig().getRacialSkills();
 
-		if (data.getResources().getRacialSkillCount() >= config.getSaiyanZenkaiAmount()) return;
-		if (data.getCooldowns().hasCooldown(Cooldowns.ZENKAI)) return;
+		if (data.getResources().getRacialSkillCount() >= config.getSaiyanZenkaiAmount())
+			return;
+		if (data.getCooldowns().hasCooldown(Cooldowns.ZENKAI))
+			return;
 
 		float maxHealth = player.getMaxHealth();
 		if (player.getHealth() <= maxHealth * 0.15) {
@@ -568,7 +623,8 @@ public class TickHandler {
 			for (String statKey : statsToBoost) {
 				int currentStat = getStatValue(data, statKey);
 				int bonus = (int) Math.max(1, currentStat * boostMult);
-				data.getBonusStats().addBonus(statKey, "Zenkai_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus);
+				data.getBonusStats().addBonus(statKey, "Zenkai_" + (data.getResources().getRacialSkillCount() + 1), "+",
+						bonus);
 			}
 
 			player.displayClientMessage(Component.translatable("message.dragonminez.racial.zenkai.used"), true);
@@ -594,7 +650,8 @@ public class TickHandler {
 
 	private static void handleBioDrainTick(ServerPlayer player, StatsData data) {
 		int targetId = data.getStatus().getDrainingTargetId();
-		if (targetId == -1) return;
+		if (targetId == -1)
+			return;
 
 		if (data.getCooldowns().getCooldown(Cooldowns.DRAIN_ACTIVE) > 0) {
 			Entity entity = player.level().getEntity(targetId);
@@ -628,7 +685,7 @@ public class TickHandler {
 						player.heal(drainPerSecond);
 					}
 					if (data.getResources().getCurrentEnergy() < data.getMaxEnergy()) {
-						data.getResources().addEnergy((int)(drainPerSecond * 5));
+						data.getResources().addEnergy((int) (drainPerSecond * 5));
 					}
 					target.playSound(MainSounds.ABSORB1.get());
 					player.playSound(MainSounds.ABSORB1.get());
@@ -670,7 +727,8 @@ public class TickHandler {
 				int timer = data.getStatus().getFusionTimer();
 				if (timer > 0) {
 					data.getStatus().setFusionTimer(timer - 1);
-					if (timer - 1 <= 0) FusionLogic.endFusion(serverPlayer, data, false);
+					if (timer - 1 <= 0)
+						FusionLogic.endFusion(serverPlayer, data, false);
 				}
 				UUID partnerUUID = data.getStatus().getFusionPartnerUUID();
 				ServerPlayer partner = serverPlayer.getServer().getPlayerList().getPlayer(partnerUUID);
@@ -684,17 +742,21 @@ public class TickHandler {
 			} else {
 				UUID leaderUUID = data.getStatus().getFusionPartnerUUID();
 				ServerPlayer leader = serverPlayer.getServer().getPlayerList().getPlayer(leaderUUID);
-				if (leader == null || leader.hasDisconnected() || leader.isDeadOrDying()) FusionLogic.endFusion(serverPlayer, data, true);
+				if (leader == null || leader.hasDisconnected() || leader.isDeadOrDying())
+					FusionLogic.endFusion(serverPlayer, data, true);
 			}
 		}
 	}
 
 	private static void handleFlightKiDrain(ServerPlayer player, StatsData data) {
-		if (!data.getSkills().isSkillActive("fly")) return;
-		if (player.isCreative() || player.isSpectator()) return;
+		if (!data.getSkills().isSkillActive("fly"))
+			return;
+		if (player.isCreative() || player.isSpectator())
+			return;
 
 		int flyLevel = data.getSkills().getSkillLevel("fly");
-		if (flyLevel >= data.getSkills().getMaxSkillLevel("fly")) return;
+		if (flyLevel >= data.getSkills().getMaxSkillLevel("fly"))
+			return;
 		int maxEnergy = data.getMaxEnergy();
 
 		double basePercent = player.isSprinting() ? 0.08 : 0.03;
@@ -764,11 +826,11 @@ public class TickHandler {
 		} else {
 			player.removeEffect(MainEffects.MIGHTFRUIT.get());
 		}
-		
+
 		if (!data.getCooldowns().hasCooldown(Cooldowns.DASH_CD)) {
 			player.removeEffect(MainEffects.DASH_CD.get());
 		}
-		
+
 		if (!data.getCooldowns().hasCooldown(Cooldowns.DOUBLEDASH_CD)) {
 			player.removeEffect(MainEffects.DOUBLEDASH_CD.get());
 		}
@@ -782,42 +844,51 @@ public class TickHandler {
 			return;
 		}
 
-		if (player.isCreative() || player.isSpectator()) return;
+		if (player.isCreative() || player.isSpectator())
+			return;
 
 		if (player.tickCount % 2 == 0) {
 			double exhaustion = data.getResources().getCurrentPhysicalExhaustion();
-			String bar = getProgressBar((int)exhaustion, 10, "§c|", "§7.");
-			player.displayClientMessage(Component.translatable("gui.dragonminez.ultrainstinct.exhaustion_bar", bar, String.format("%.2f", exhaustion)), true);
+			String bar = getProgressBar((int) exhaustion, 10, "§c|", "§7.");
+			player.displayClientMessage(Component.translatable("gui.dragonminez.ultrainstinct.exhaustion_bar", bar,
+					String.format("%.2f", exhaustion)), true);
 		}
 
 		if (player.tickCount % 20 == 0) {
-			// Faster passive mastery gain (0.02% per second)
+			// Ganancia pasiva de maestria de ultra instinto (0.02% por segundo)
 			data.getCharacter().getFormMasteries().addMastery("special", "ultrainstinct", 0.02, 100.0);
 
 			double exhaustionRate = data.getPhysicalExhaustionRate();
 			if (data.getCharacter().getFormMasteries().getMastery("special", "ultrainstinct") < 100.0) {
 				data.getResources().addPhysicalExhaustion(exhaustionRate);
 			}
-			
+
+			// Se podria agregar un efecto y no permitirle transformarse de nuevo
 			if (data.getResources().getCurrentPhysicalExhaustion() >= 100.0) {
 				data.getStatus().setUltraInstinctActive(false);
 				data.getResources().setCurrentPhysicalExhaustion(0);
-				
+
 				player.addEffect(new MobEffectInstance(net.minecraft.world.effect.MobEffects.WEAKNESS, 600, 1));
-				player.addEffect(new MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 600, 1));
-				player.displayClientMessage(Component.translatable("message.dragonminez.ultrainstinct.exhausted"), true);
-				player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.SHIELD_BREAK, SoundSource.PLAYERS, 1.0F, 1.0F);
-				
+				player.addEffect(
+						new MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 600, 1));
+				player.displayClientMessage(Component.translatable("message.dragonminez.ultrainstinct.exhausted"),
+						true);
+				player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.SHIELD_BREAK,
+						SoundSource.PLAYERS, 1.0F, 1.0F);
+
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			}
 		}
 	}
+
 	private static String getProgressBar(int current, int total, String filledChar, String emptyChar) {
 		StringBuilder sb = new StringBuilder();
 		int filledAmount = (int) ((current / 100.0) * total);
 		for (int i = 0; i < total; i++) {
-			if (i < filledAmount) sb.append(filledChar);
-			else sb.append(emptyChar);
+			if (i < filledAmount)
+				sb.append(filledChar);
+			else
+				sb.append(emptyChar);
 		}
 		return sb.toString();
 	}

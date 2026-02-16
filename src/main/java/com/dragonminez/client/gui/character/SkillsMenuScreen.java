@@ -36,14 +36,17 @@ public class SkillsMenuScreen extends BaseMenuScreen {
             "textures/gui/menu/menubig.png");
     private static final ResourceLocation MENU_SMALL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/menu/menusmall.png");
-	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
-			"textures/gui/buttons/characterbuttons.png");
+    private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+            "textures/gui/buttons/characterbuttons.png");
 
     private static final int SKILL_ITEM_HEIGHT = 20;
     private static final int MAX_VISIBLE_SKILLS = 8;
     private static final int BUTTON_ANIM_TIME = 5;
 
-    private enum SkillCategory { SKILLS, KI, FORMS }
+    private enum SkillCategory {
+        SKILLS, KI, FORMS
+    }
+
     private SkillCategory currentCategory = SkillCategory.SKILLS;
 
     private StatsData statsData;
@@ -79,13 +82,15 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         if (tickCount >= 10) {
             tickCount = 0;
             updateStatsData();
-			refreshButtons();
+            refreshButtons();
         }
 
         if (isHotZoneHovered) {
-            if (animTick < BUTTON_ANIM_TIME) animTick++;
+            if (animTick < BUTTON_ANIM_TIME)
+                animTick++;
         } else {
-            if (animTick > 0) animTick--;
+            if (animTick > 0)
+                animTick--;
         }
     }
 
@@ -167,7 +172,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
     }
 
     private List<String> getVisibleSkillNames() {
-        if (statsData == null) return new ArrayList<>();
+        if (statsData == null)
+            return new ArrayList<>();
 
         Skills skills = statsData.getSkills();
         List<String> skillNames = new ArrayList<>();
@@ -175,43 +181,42 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         switch (currentCategory) {
             case SKILLS:
                 skills.getAllSkills().forEach((name, skill) -> {
-                    // Exclude form-related skills from the general Skills tab
-                    if (!name.equals("superform") && !name.equals("godform") 
-                        && !name.equals("legendaryforms") && !name.equals("ultrainstinct")
-                        && !name.equals("androidforms")) {
+
+                    if (!name.equals("superform") && !name.equals("godform")
+                            && !name.equals("legendaryforms") && !name.equals("ultrainstinct")
+                            && !name.equals("androidforms")) {
                         skillNames.add(name);
                     }
                 });
                 break;
             case KI:
-                // KI skills can be added here in the future
+
                 break;
             case FORMS:
-                if (skills.hasSkill("superform")) skillNames.add("superform");
-                
+                if (skills.hasSkill("superform"))
+                    skillNames.add("superform");
+
                 if (skills.hasSkill("godform")) {
                     int godLevel = skills.getSkillLevel("godform");
                     int superLevel = skills.getSkillLevel("superform");
-                    
-                    // Use the race config's cost array to determine the real superform max
+
                     var raceConfig = ConfigManager.getRaceCharacter(statsData.getCharacter().getRaceName());
                     int[] superformCosts = raceConfig.getSuperformTpCost();
                     int realSuperMax = (superformCosts != null) ? superformCosts.length : 0;
-                    
-                    // Show if already obtained OR if superform is at config-defined max
+
                     if (godLevel > 0 || superLevel >= realSuperMax) {
                         skillNames.add("godform");
                     }
                 }
-                
-                // Only show Ultra Instinct if already obtained (level > 0)
+
                 if (skills.hasSkill("ultrainstinct")) {
                     if (skills.getSkillLevel("ultrainstinct") > 0) {
                         skillNames.add("ultrainstinct");
                     }
                 }
 
-                if (skills.hasSkill("legendaryforms")) skillNames.add("legendaryforms");
+                if (skills.hasSkill("legendaryforms"))
+                    skillNames.add("legendaryforms");
                 break;
         }
 
@@ -220,19 +225,22 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
     private void refreshButtons() {
         this.clearWidgets();
-		if (upgradeButton != null) this.removeWidget(upgradeButton);
+        if (upgradeButton != null)
+            this.removeWidget(upgradeButton);
 
-		this.upgradeButton = null;
+        this.upgradeButton = null;
         initDynamicButtons();
         initNavigationButtons();
         initUpgradeButton();
     }
 
     private void initUpgradeButton() {
-        if (selectedSkill == null || statsData == null) return;
+        if (selectedSkill == null || statsData == null)
+            return;
 
         Skill skill = statsData.getSkills().getSkill(selectedSkill);
-        if (skill == null) return;
+        if (skill == null)
+            return;
 
         int rightPanelX = getUiWidth() - 158;
         int centerY = getUiHeight() / 2;
@@ -241,59 +249,61 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         int cost = getUpgradeCost(selectedSkill, skill.getLevel());
         int currentTPS = statsData.getResources().getTrainingPoints();
         boolean canUpgrade = skill.getLevel() < skill.getMaxLevel() && currentTPS >= cost;
-		if (cost == -1 || cost == Integer.MAX_VALUE) return;
-		boolean isSuperForm = selectedSkill.equals("superform") || selectedSkill.equals("godform") || selectedSkill.equals("legendaryforms");
+        if (cost == -1 || cost == Integer.MAX_VALUE)
+            return;
+        boolean isSuperForm = selectedSkill.equals("superform") || selectedSkill.equals("godform")
+                || selectedSkill.equals("legendaryforms");
 
         if (skill.getLevel() < skill.getMaxLevel() && skill.getLevel() != skill.getMaxLevel() || isSuperForm) {
-			upgradeButton = new TexturedTextButton.Builder()
-					.position(rightPanelX + 35, rightPanelY + 196)
-					.size(74, 20)
-					.texture(BUTTONS_TEXTURE)
-					.textureCoords(0, 28, 0, 48)
-					.textureSize(74, 20)
-					.message(Component.translatable("gui.dragonminez.skills.upgrade"))
-					.onPress(btn -> {
-						if (canUpgrade) {
-							NetworkHandler.INSTANCE.sendToServer(new UpdateSkillC2S("upgrade", selectedSkill, cost));
-							updateStatsData();
-						}
-					})
-					.build();
+            upgradeButton = new TexturedTextButton.Builder()
+                    .position(rightPanelX + 35, rightPanelY + 196)
+                    .size(74, 20)
+                    .texture(BUTTONS_TEXTURE)
+                    .textureCoords(0, 28, 0, 48)
+                    .textureSize(74, 20)
+                    .message(Component.translatable("gui.dragonminez.skills.upgrade"))
+                    .onPress(btn -> {
+                        if (canUpgrade) {
+                            NetworkHandler.INSTANCE.sendToServer(new UpdateSkillC2S("upgrade", selectedSkill, cost));
+                            updateStatsData();
+                        }
+                    })
+                    .build();
 
-			upgradeButton.active = canUpgrade;
-			this.addRenderableWidget(upgradeButton);
-		}
+            upgradeButton.active = canUpgrade;
+            this.addRenderableWidget(upgradeButton);
+        }
     }
 
     private int getUpgradeCost(String skillName, int currentLevel) {
-		if (skillName.contains("form")) {
-			var raceConfig = ConfigManager.getRaceCharacter(statsData.getCharacter().getRaceName());
-			int[] costs = null;
-			switch (skillName) {
-				case "superform" -> costs = raceConfig.getSuperformTpCost();
-				case "godform" -> costs = raceConfig.getGodformTpCost();
-				case "legendaryforms" -> costs = raceConfig.getLegendaryformsTpCost();
-				case "androidforms" -> costs = raceConfig.getAndroidformsTpCost();
-			}
+        if (skillName.contains("form")) {
+            var raceConfig = ConfigManager.getRaceCharacter(statsData.getCharacter().getRaceName());
+            int[] costs = null;
+            switch (skillName) {
+                case "superform" -> costs = raceConfig.getSuperformTpCost();
+                case "godform" -> costs = raceConfig.getGodformTpCost();
+                case "legendaryforms" -> costs = raceConfig.getLegendaryformsTpCost();
+                case "androidforms" -> costs = raceConfig.getAndroidformsTpCost();
+            }
 
-			if (costs != null && currentLevel + 1 <= costs.length) {
-				return costs[currentLevel];
-			} else {
-				return Integer.MAX_VALUE;
-			}
-		} else {
-			var skillConfig = ConfigManager.getSkillsConfig();
-			var skillData = skillConfig.getSkills().get(skillName);
+            if (costs != null && currentLevel + 1 <= costs.length) {
+                return costs[currentLevel];
+            } else {
+                return Integer.MAX_VALUE;
+            }
+        } else {
+            var skillConfig = ConfigManager.getSkillsConfig();
+            var skillData = skillConfig.getSkills().get(skillName);
 
-			if (skillData != null && skillData.getCosts() != null) {
-				var costs = skillData.getCosts();
-				if (currentLevel + 1 <= costs.size()) {
-					return costs.get(currentLevel);
-				}
-			}
+            if (skillData != null && skillData.getCosts() != null) {
+                var costs = skillData.getCosts();
+                if (currentLevel + 1 <= costs.size()) {
+                    return costs.get(currentLevel);
+                }
+            }
 
-			return Integer.MAX_VALUE;
-		}
+            return Integer.MAX_VALUE;
+        }
     }
 
     @Override
@@ -327,7 +337,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         int hotZoneHeight = 100;
 
         isHotZoneHovered = mouseX >= hotZoneX && mouseX < hotZoneX + hotZoneWidth &&
-                           mouseY >= hotZoneY && mouseY < hotZoneY + hotZoneHeight;
+                mouseY >= hotZoneY && mouseY < hotZoneY + hotZoneHeight;
 
         float animProgress = (animTick + (isHotZoneHovered ? partialTick : -partialTick)) / BUTTON_ANIM_TIME;
         animProgress = Mth.clamp(animProgress, 0.0f, 1.0f);
@@ -335,7 +345,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         int hiddenX = leftPanelX + 122;
         int visibleX = leftPanelX + 141;
 
-        int newX = hiddenX + (int)((visibleX - hiddenX) * animProgress);
+        int newX = hiddenX + (int) ((visibleX - hiddenX) * animProgress);
         skillsButton.setX(newX);
         kiButton.setX(newX);
         formsButton.setX(newX);
@@ -347,8 +357,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         int leftPanelY = centerY - 105;
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		graphics.blit(MENU_BIG, leftPanelX, leftPanelY, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
+        graphics.blit(MENU_BIG, leftPanelX, leftPanelY, 0, 0, 141, 213, 256, 256);
+        graphics.blit(MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
 
         renderSkillsList(graphics, leftPanelX, leftPanelY, mouseX, mouseY);
     }
@@ -361,11 +371,10 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_SKILLS, skillNames.size());
 
         graphics.enableScissor(
-            toScreenCoord(panelX + 5),
-            toScreenCoord(startY),
-            toScreenCoord(panelX + 179),
-            toScreenCoord(startY + (MAX_VISIBLE_SKILLS * SKILL_ITEM_HEIGHT))
-        );
+                toScreenCoord(panelX + 5),
+                toScreenCoord(startY),
+                toScreenCoord(panelX + 179),
+                toScreenCoord(startY + (MAX_VISIBLE_SKILLS * SKILL_ITEM_HEIGHT)));
 
         for (int i = visibleStart; i < visibleEnd; i++) {
             String skillName = skillNames.get(i);
@@ -373,7 +382,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
             boolean isSelected = skillName.equals(selectedSkill);
             boolean isHovered = mouseX >= panelX + 10 && mouseX <= panelX + 100 &&
-                              mouseY >= itemY && mouseY <= itemY + SKILL_ITEM_HEIGHT;
+                    mouseY >= itemY && mouseY <= itemY + SKILL_ITEM_HEIGHT;
 
             int color = isSelected ? 0xFFFFAA00 : (isHovered ? 0xFFAAAAAA : 0xFFFFFFFF);
 
@@ -386,7 +395,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
                 String levelText = String.valueOf(skill.getLevel());
                 int levelX = panelX + 130 - this.font.width(levelText);
                 drawStringWithBorder(graphics, Component.literal(levelText),
-                    levelX, itemY + 5, color);
+                        levelX, itemY + 5, color);
             }
         }
 
@@ -402,21 +411,21 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
             float scrollPercent = (float) scrollOffset / maxScroll;
             float visiblePercent = (float) MAX_VISIBLE_SKILLS / totalItems;
-            int indicatorHeight = Math.max(20, (int)(scrollBarHeight * visiblePercent));
-            int indicatorY = scrollBarStartY + (int)((scrollBarHeight - indicatorHeight) * scrollPercent);
+            int indicatorHeight = Math.max(20, (int) (scrollBarHeight * visiblePercent));
+            int indicatorY = scrollBarStartY + (int) ((scrollBarHeight - indicatorHeight) * scrollPercent);
 
             graphics.fill(scrollBarX, indicatorY, scrollBarX + 3, indicatorY + indicatorHeight, 0xFFAAAAAA);
         }
 
-		String title = "";
-		switch (currentCategory) {
-			case SKILLS -> title = "gui.dragonminez.skills.tab.skills";
-			case KI -> title = "gui.dragonminez.skills.tab.kiattacks";
-			case FORMS -> title = "gui.dragonminez.skills.tab.forms";
-		}
+        String title = "";
+        switch (currentCategory) {
+            case SKILLS -> title = "gui.dragonminez.skills.tab.skills";
+            case KI -> title = "gui.dragonminez.skills.tab.kiattacks";
+            case FORMS -> title = "gui.dragonminez.skills.tab.forms";
+        }
 
-		drawCenteredStringWithBorder(graphics, Component.translatable(title)
-				.withStyle(style -> style.withBold(true)), 80, getUiHeight() / 2 - 88, 0xFBC51C);
+        drawCenteredStringWithBorder(graphics, Component.translatable(title)
+                .withStyle(style -> style.withBold(true)), 80, getUiHeight() / 2 - 88, 0xFBC51C);
     }
 
     private void renderRightPanel(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -426,22 +435,22 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
         graphics.blit(MENU_SMALL, rightPanelX, rightPanelY, 0, 0, 141, 94, 256, 256);
-		graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
-		graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 96, 0, 0, 141, 94, 256, 256);
-		graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 190, 0, 154, 141, 32, 256, 256);
+        graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
+        graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 96, 0, 0, 141, 94, 256, 256);
+        graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 190, 0, 154, 141, 32, 256, 256);
 
-		drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.info")
-						.withStyle(style -> style.withBold(true)), rightPanelX + 70, rightPanelY + 16, 0xFFFFD700);
+        drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.info")
+                .withStyle(style -> style.withBold(true)), rightPanelX + 70, rightPanelY + 16, 0xFFFFD700);
 
-
-		if (selectedSkill != null && statsData != null) {
+        if (selectedSkill != null && statsData != null) {
             renderSkillDetails(graphics, rightPanelX, rightPanelY);
         }
     }
 
     private void renderSkillDetails(GuiGraphics graphics, int panelX, int panelY) {
         Skill skill = statsData.getSkills().getSkill(selectedSkill);
-        if (skill == null) return;
+        if (skill == null)
+            return;
 
         String displayName = Component.translatable("skill.dragonminez." + selectedSkill).getString();
         String description = Component.translatable("skill.dragonminez." + selectedSkill + ".desc").getString();
@@ -449,16 +458,16 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         int startY = panelY + 40;
 
         drawCenteredStringWithBorder(graphics, Component.literal(displayName).withStyle(ChatFormatting.BOLD),
-            panelX + 72, startY, 0xFFFFFFFF);
+                panelX + 72, startY, 0xFFFFFFFF);
 
         drawCenteredStringWithBorder(graphics,
-            Component.translatable("gui.dragonminez.skills.level", skill.getLevel(), skill.getMaxLevel()),
-            panelX + 72, startY + 12, 0xFFAAAAAA);
-		if (getUpgradeCost(selectedSkill, skill.getLevel()) != Integer.MAX_VALUE) {
-			drawCenteredStringWithBorder(graphics,
-					Component.literal("%d TPS".formatted(getUpgradeCost(selectedSkill, skill.getLevel()))),
-					panelX + 72, startY + 24, 0xFFAAAAAA);
-		}
+                Component.translatable("gui.dragonminez.skills.level", skill.getLevel(), skill.getMaxLevel()),
+                panelX + 72, startY + 12, 0xFFAAAAAA);
+        if (getUpgradeCost(selectedSkill, skill.getLevel()) != Integer.MAX_VALUE) {
+            drawCenteredStringWithBorder(graphics,
+                    Component.literal("%d TPS".formatted(getUpgradeCost(selectedSkill, skill.getLevel()))),
+                    panelX + 72, startY + 24, 0xFFAAAAAA);
+        }
 
         List<String> wrappedDesc = wrapText(description, 130);
         int descY = startY + 70;
@@ -476,7 +485,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         for (String word : words) {
             String testLine = currentLine.length() == 0 ? word : currentLine + " " + word;
             if (font.width(testLine) <= maxWidth) {
-                if (currentLine.length() > 0) currentLine.append(" ");
+                if (currentLine.length() > 0)
+                    currentLine.append(" ");
                 currentLine.append(word);
             } else {
                 if (currentLine.length() > 0) {
@@ -504,9 +514,9 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         int leftPanelY = centerY - 105;
 
         if (uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 184 &&
-            uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 239) {
+                uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 239) {
 
-            scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int)delta));
+            scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int) delta));
             return true;
         }
 
@@ -530,7 +540,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
             int itemY = startY + ((i - visibleStart) * SKILL_ITEM_HEIGHT);
 
             if (uiMouseX >= leftPanelX + 10 && uiMouseX <= leftPanelX + 100 &&
-                uiMouseY >= itemY && uiMouseY <= itemY + SKILL_ITEM_HEIGHT - 5) {
+                    uiMouseY >= itemY && uiMouseY <= itemY + SKILL_ITEM_HEIGHT - 5) {
 
                 selectedSkill = skillNames.get(i);
                 refreshButtons();
@@ -541,42 +551,43 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
-	private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
-		LivingEntity player = Minecraft.getInstance().player;
-		if (player == null) return;
+    private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
+        LivingEntity player = Minecraft.getInstance().player;
+        if (player == null)
+            return;
 
-		int adjustedScale = getAdjustedModelScale(scale);
+        int adjustedScale = getAdjustedModelScale(scale);
 
-		float xRotation = (float) Math.atan((double)((float)y - mouseY) / 40.0F);
-		float yRotation = (float) Math.atan((double)((float)x - mouseX) / 40.0F);
+        float xRotation = (float) Math.atan((double) ((float) y - mouseY) / 40.0F);
+        float yRotation = (float) Math.atan((double) ((float) x - mouseX) / 40.0F);
 
-		Quaternionf pose = (new Quaternionf()).rotateZ((float)Math.PI);
-		Quaternionf cameraOrientation = (new Quaternionf()).rotateX(xRotation * 20.0F * ((float)Math.PI / 180F));
-		pose.mul(cameraOrientation);
+        Quaternionf pose = (new Quaternionf()).rotateZ((float) Math.PI);
+        Quaternionf cameraOrientation = (new Quaternionf()).rotateX(xRotation * 20.0F * ((float) Math.PI / 180F));
+        pose.mul(cameraOrientation);
 
-		float yBodyRotO = player.yBodyRot;
-		float yRotO = player.getYRot();
-		float xRotO = player.getXRot();
-		float yHeadRotO = player.yHeadRotO;
-		float yHeadRot = player.yHeadRot;
+        float yBodyRotO = player.yBodyRot;
+        float yRotO = player.getYRot();
+        float xRotO = player.getXRot();
+        float yHeadRotO = player.yHeadRotO;
+        float yHeadRot = player.yHeadRot;
 
-		player.yBodyRot = 180.0F + yRotation * 20.0F;
-		player.setYRot(180.0F + yRotation * 40.0F);
-		player.setXRot(-xRotation * 20.0F);
-		player.yHeadRot = player.getYRot();
-		player.yHeadRotO = player.getYRot();
+        player.yBodyRot = 180.0F + yRotation * 20.0F;
+        player.setYRot(180.0F + yRotation * 40.0F);
+        player.setXRot(-xRotation * 20.0F);
+        player.yHeadRot = player.getYRot();
+        player.yHeadRotO = player.getYRot();
 
-		graphics.pose().pushPose();
-		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
-		graphics.pose().popPose();
+        graphics.pose().pushPose();
+        graphics.pose().translate(0.0D, 0.0D, 150.0D);
+        InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
+        graphics.pose().popPose();
 
-		player.yBodyRot = yBodyRotO;
-		player.setYRot(yRotO);
-		player.setXRot(xRotO);
-		player.yHeadRotO = yHeadRotO;
-		player.yHeadRot = yHeadRot;
-	}
+        player.yBodyRot = yBodyRotO;
+        player.setYRot(yRotO);
+        player.setXRot(xRotO);
+        player.yHeadRotO = yHeadRotO;
+        player.yHeadRot = yHeadRot;
+    }
 
     private void drawStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int textColor) {
         int borderColor = 0xFF000000;

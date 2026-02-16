@@ -35,26 +35,35 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	private static float lastHairProgress = 0.0f;
 	private static long lastUpdateTick = 0;
 
-    public DMZHairLayer(GeoRenderer<T> renderer) {
-        super(renderer);
-    }
+	public DMZHairLayer(GeoRenderer<T> renderer) {
+		super(renderer);
+	}
 
-    @Override
-    public void render(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
-        // No renderizar si tiene un casco que no sea pothala/scouter, es invisible o spectator
-        if (animatable.isInvisible() || animatable.isSpectator()) return;
-		if (FirstPersonManager.shouldRenderFirstPerson(animatable)) return;
+	@Override
+	public void render(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType,
+			MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight,
+			int packedOverlay) {
 
-        var headItem = animatable.getItemBySlot(EquipmentSlot.HEAD);
-        if (!headItem.isEmpty() && !headItem.getItem().getDescriptionId().contains("pothala") && !headItem.getItem().getDescriptionId().contains("scouter") && !headItem.getItem().getDescriptionId().contains("invincible")) return;
+		if (animatable.isInvisible() || animatable.isSpectator())
+			return;
+		if (FirstPersonManager.shouldRenderFirstPerson(animatable))
+			return;
 
-        var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
-        var stats = statsCap.orElse(new StatsData(animatable));
-        Character character = stats.getCharacter();
-        if (!HairManager.canUseHair(character)) return;
+		var headItem = animatable.getItemBySlot(EquipmentSlot.HEAD);
+		if (!headItem.isEmpty() && !headItem.getItem().getDescriptionId().contains("pothala")
+				&& !headItem.getItem().getDescriptionId().contains("scouter")
+				&& !headItem.getItem().getDescriptionId().contains("invincible"))
+			return;
 
-        CustomHair effectiveHair = HairManager.getEffectiveHair(character);
-        if (effectiveHair == null || effectiveHair.isEmpty()) return;
+		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
+		var stats = statsCap.orElse(new StatsData(animatable));
+		Character character = stats.getCharacter();
+		if (!HairManager.canUseHair(character))
+			return;
+
+		CustomHair effectiveHair = HairManager.getEffectiveHair(character);
+		if (effectiveHair == null || effectiveHair.isEmpty())
+			return;
 
 		CustomHair hairFrom = character.getHairBase();
 		CustomHair hairTo = character.getHairBase();
@@ -65,8 +74,10 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			hairTo = hairFrom;
 			factor = 1.0f;
 			lastHairProgress = 1.0f;
-			if (character.getActiveForm().contains("oozaru")) return;
-		} else if (stats.getStatus().isActionCharging() && (stats.getStatus().getSelectedAction() == ActionMode.FORM || stats.getStatus().getSelectedAction() == ActionMode.GODFORMS)) {
+			if (character.getActiveForm().contains("oozaru"))
+				return;
+		} else if (stats.getStatus().isActionCharging() && (stats.getStatus().getSelectedAction() == ActionMode.FORM
+				|| stats.getStatus().getSelectedAction() == ActionMode.GODFORMS)) {
 			String targetGroup = character.getSelectedFormGroup();
 			var nextForm = TransformationsHelper.getNextAvailableForm(stats);
 			if (nextForm != null) {
@@ -111,7 +122,8 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		}
 
 		Optional<GeoBone> headBoneOpt = model.getBone("head");
-		if (headBoneOpt.isEmpty()) return;
+		if (headBoneOpt.isEmpty())
+			return;
 		GeoBone headBone = headBoneOpt.get();
 		List<GeoBone> boneChain = new ArrayList<>();
 		CoreGeoBone currentBone = headBone;
@@ -126,9 +138,10 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		float bodyYaw = Mth.lerp(partialTick, animatable.yBodyRotO, animatable.yBodyRot);
 		poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - bodyYaw));
 		if (animatable.deathTime > 0) {
-			float deathProgress = ((float)animatable.deathTime + partialTick - 1.0F) / 20.0F * 1.6F;
+			float deathProgress = ((float) animatable.deathTime + partialTick - 1.0F) / 20.0F * 1.6F;
 			deathProgress = Mth.sqrt(deathProgress);
-			if (deathProgress > 1.0F) deathProgress = 1.0F;
+			if (deathProgress > 1.0F)
+				deathProgress = 1.0F;
 			poseStack.mulPose(Axis.ZP.rotationDegrees(deathProgress * 90.0F));
 		}
 		float modelScale = 0.0625f;
@@ -143,7 +156,8 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				float dy = (float) ((geoBone.getPivotY() - parentPivotY) * modelScale);
 				float dz = (float) ((geoBone.getPivotZ() - parentPivotZ) * modelScale);
 				poseStack.translate(dx, dy, dz);
-				poseStack.translate(geoBone.getPosX() * modelScale, geoBone.getPosY() * modelScale, geoBone.getPosZ() * modelScale);
+				poseStack.translate(geoBone.getPosX() * modelScale, geoBone.getPosY() * modelScale,
+						geoBone.getPosZ() * modelScale);
 				poseStack.mulPose(Axis.ZP.rotation(geoBone.getRotZ()));
 				poseStack.mulPose(Axis.YP.rotation(geoBone.getRotY()));
 				poseStack.mulPose(Axis.XP.rotation(geoBone.getRotX()));
@@ -154,7 +168,8 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			}
 		}
 		poseStack.translate(0, 0, 0);
-		HairRenderer.render(poseStack, bufferSource, hairFrom, hairTo, factor, character, stats, animatable, character.getHairColor(), partialTick, packedLight, packedOverlay);
+		HairRenderer.render(poseStack, bufferSource, hairFrom, hairTo, factor, character, stats, animatable,
+				character.getHairColor(), partialTick, packedLight, packedOverlay);
 		poseStack.popPose();
 	}
 
@@ -164,13 +179,21 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			var formData = config.getForm(formName);
 			if (formData != null && formData.hasHairCodeOverride()) {
 				CustomHair override = HairManager.fromCode(formData.getForcedHairCode());
-				if (override != null) return override;
+				if (override != null)
+					return override;
 			} else if (formData != null && formData.hasDefinedHairType()) {
 				switch (formData.getHairType().toLowerCase()) {
-					case "base" -> { return character.getHairBase(); }
-					case "ssj" -> { return character.getHairSSJ(); }
-					case "ssj3" -> { return character.getHairSSJ3(); }
-					default -> {}
+					case "base" -> {
+						return character.getHairBase();
+					}
+					case "ssj" -> {
+						return character.getHairSSJ();
+					}
+					case "ssj3" -> {
+						return character.getHairSSJ3();
+					}
+					default -> {
+					}
 				}
 			}
 		}

@@ -43,21 +43,32 @@ import java.util.*;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class AuraRenderHandler {
-	private static final ResourceLocation AURA_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/kiaura.geo.json");
-	private static final ResourceLocation AURA_TEX_0 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/aura_ki_0.png");
-	private static final ResourceLocation AURA_TEX_1 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/aura_ki_1.png");
-	private static final ResourceLocation AURA_TEX_2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/aura_ki_2.png");
-    private static final ResourceLocation AURA_SLOW_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/kiaura2.geo.json");
+    private static final ResourceLocation AURA_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+            "geo/entity/races/kiaura.geo.json");
+    private static final ResourceLocation AURA_TEX_0 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+            "textures/entity/ki/aura_ki_0.png");
+    private static final ResourceLocation AURA_TEX_1 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+            "textures/entity/ki/aura_ki_1.png");
+    private static final ResourceLocation AURA_TEX_2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+            "textures/entity/ki/aura_ki_2.png");
+    private static final ResourceLocation AURA_SLOW_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+            "geo/entity/races/kiaura2.geo.json");
 
-    private static final ResourceLocation SPARK_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/kirayos.geo.json");
-    private static final ResourceLocation SPARK_TEX_0 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/rayo_0.png");
-    private static final ResourceLocation SPARK_TEX_1 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/rayo_1.png");
-    private static final ResourceLocation SPARK_TEX_2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/rayo_2.png");
+    private static final ResourceLocation SPARK_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+            "geo/entity/races/kirayos.geo.json");
+    private static final ResourceLocation SPARK_TEX_0 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+            "textures/entity/ki/rayo_0.png");
+    private static final ResourceLocation SPARK_TEX_1 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+            "textures/entity/ki/rayo_1.png");
+    private static final ResourceLocation SPARK_TEX_2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+            "textures/entity/ki/rayo_2.png");
 
-    private static final ResourceLocation KI_WEAPONS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/kiweapons.geo.json");
-    private static final ResourceLocation KI_WEAPONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/kiweapons.png");
+    private static final ResourceLocation KI_WEAPONS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+            "geo/entity/races/kiweapons.geo.json");
+    private static final ResourceLocation KI_WEAPONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+            "textures/entity/races/kiweapons.png");
 
-    private static final float HALF_SQRT_3 = (float)(Math.sqrt(3.0D) / 2.0D);
+    private static final float HALF_SQRT_3 = (float) (Math.sqrt(3.0D) / 2.0D);
     private static final Map<Integer, Long> FUSION_START_TIME = new HashMap<>();
     private static final Map<Integer, Boolean> WAS_FUSED_CACHE = new HashMap<>();
 
@@ -91,21 +102,29 @@ public class AuraRenderHandler {
         }
 
         if (currentForm.contains("oozaru") || currentForm.contains("golden_oozaru")) {
-            return new float[]{1.0f, 1.0f, 1.0f};
+            return new float[] { 1.0f, 1.0f, 1.0f };
         }
 
         if (character.hasActiveForm()) {
             var activeForm = character.getActiveFormData();
             if (activeForm != null) {
                 float[] scales = activeForm.getModelScaling();
-                if (scales != null && scales.length >= 3) { sX = scales[0]; sY = scales[1]; sZ = scales[2]; }
+                if (scales != null && scales.length >= 3) {
+                    sX = scales[0];
+                    sY = scales[1];
+                    sZ = scales[2];
+                }
             }
         } else {
             // Escala base
             float[] scales = character.getModelScaling();
-            if (scales != null && scales.length >= 3) { sX = scales[0]; sY = scales[1]; sZ = scales[2]; }
+            if (scales != null && scales.length >= 3) {
+                sX = scales[0];
+                sY = scales[1];
+                sZ = scales[2];
+            }
         }
-        return new float[]{sX, sY, sZ};
+        return new float[] { sX, sY, sZ };
     }
 
     private static float[] getAuraScale(StatsData stats) {
@@ -118,7 +137,7 @@ public class AuraRenderHandler {
         }
 
         if (formName.contains("oozaru") || formName.contains("golden_oozaru")) {
-            return new float[]{3.5f, 3.5f, 3.5f};
+            return new float[] { 3.5f, 3.5f, 3.5f };
         }
 
         if (formName.contains("supersaiyan2") || formName.contains("supersaiyan3") || formName.contains("overdrive") ||
@@ -126,12 +145,13 @@ public class AuraRenderHandler {
             scale += 0.3f;
         }
 
-        return new float[]{scale, scale, scale};
+        return new float[] { scale, scale, scale };
     }
 
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES)
+            return;
 
         Minecraft mc = Minecraft.getInstance();
         EntityRenderDispatcher dispatcher = mc.getEntityRenderDispatcher();
@@ -160,13 +180,14 @@ public class AuraRenderHandler {
 
                     if (timeSinceStart < 60) {
                         float[] color = getKiColor(stats);
-                        int r = (int)(color[0] * 255);
-                        int g = (int)(color[1] * 255);
-                        int b = (int)(color[2] * 255);
+                        int r = (int) (color[0] * 255);
+                        int g = (int) (color[1] * 255);
+                        int b = (int) (color[2] * 255);
 
                         renderFusionFlash(player, timeSinceStart + partialTick, poseStack, buffers, r, g, b);
                     } else {
-                        if (timeSinceStart > 80) FUSION_START_TIME.remove(playerId);
+                        if (timeSinceStart > 80)
+                            FUSION_START_TIME.remove(playerId);
                     }
                 }
             }
@@ -212,7 +233,8 @@ public class AuraRenderHandler {
         }
 
         PULSE_PROGRESS.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
-        PULSE_LAST_RENDER_TIME.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
+        PULSE_LAST_RENDER_TIME.keySet()
+                .removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
         LAST_RENDER_TIME.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 
         var sparks = AuraRenderQueue.getAndClearSparks();
@@ -227,14 +249,17 @@ public class AuraRenderHandler {
         var weapons = AuraRenderQueue.getAndClearWeapons();
         if (weapons != null && !weapons.isEmpty()) {
             for (var entry : weapons) {
-                if (entry == null) continue;
+                if (entry == null)
+                    continue;
                 var player = entry.player();
-                if (player == null) continue;
+                if (player == null)
+                    continue;
                 EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
 
                 if (genericRenderer instanceof DMZPlayerRenderer renderer) {
                     BakedGeoModel weaponModel = renderer.getGeoModel().getBakedModel(KI_WEAPONS_MODEL);
-                    if (weaponModel == null) continue;
+                    if (weaponModel == null)
+                        continue;
 
                     resetModelParts(weaponModel);
                     boolean isRight = player.getMainArm() == HumanoidArm.RIGHT;
@@ -247,7 +272,7 @@ public class AuraRenderHandler {
                         poseStack.pushPose();
                         poseStack.last().pose().set(entry.poseMatrix());
 
-                        renderer.reRender(weaponModel, poseStack, buffers, (GeoAnimatable)player,
+                        renderer.reRender(weaponModel, poseStack, buffers, (GeoAnimatable) player,
                                 ModRenderTypes.energy(KI_WEAPONS_TEXTURE),
                                 buffers.getBuffer(ModRenderTypes.energy(KI_WEAPONS_TEXTURE)),
                                 entry.partialTick(), 15728880, OverlayTexture.NO_OVERLAY,
@@ -271,11 +296,11 @@ public class AuraRenderHandler {
         };
     }
 
-	private static void syncModelToPlayer(BakedGeoModel auraModel, BakedGeoModel playerModel) {
-		for (GeoBone auraBone : auraModel.topLevelBones()) {
-			syncBoneRecursively(auraBone, playerModel);
-		}
-	}
+    private static void syncModelToPlayer(BakedGeoModel auraModel, BakedGeoModel playerModel) {
+        for (GeoBone auraBone : auraModel.topLevelBones()) {
+            syncBoneRecursively(auraBone, playerModel);
+        }
+    }
 
     private static void showBoneChain(GeoBone bone) {
         setHiddenRecursive(bone, false);
@@ -292,6 +317,7 @@ public class AuraRenderHandler {
             setHiddenRecursive(bone, true);
         }
     }
+
     private static void setHiddenRecursive(GeoBone bone, boolean hidden) {
         bone.setHidden(hidden);
         for (GeoBone child : bone.getChildBones()) {
@@ -299,41 +325,48 @@ public class AuraRenderHandler {
         }
     }
 
-	private static void syncBoneRecursively(GeoBone destBone, BakedGeoModel sourceModel) {
-		sourceModel.getBone(destBone.getName()).ifPresent(sourceBone -> {
-			destBone.setRotX(sourceBone.getRotX());
-			destBone.setRotY(sourceBone.getRotY());
-			destBone.setRotZ(sourceBone.getRotZ());
-			destBone.setPosX(sourceBone.getPosX());
-			destBone.setPosY(sourceBone.getPosY());
-			destBone.setPosZ(sourceBone.getPosZ());
-		});
-		for (GeoBone child : destBone.getChildBones()) syncBoneRecursively(child, sourceModel);
-	}
+    private static void syncBoneRecursively(GeoBone destBone, BakedGeoModel sourceModel) {
+        sourceModel.getBone(destBone.getName()).ifPresent(sourceBone -> {
+            destBone.setRotX(sourceBone.getRotX());
+            destBone.setRotY(sourceBone.getRotY());
+            destBone.setRotZ(sourceBone.getRotZ());
+            destBone.setPosX(sourceBone.getPosX());
+            destBone.setPosY(sourceBone.getPosY());
+            destBone.setPosZ(sourceBone.getPosZ());
+        });
+        for (GeoBone child : destBone.getChildBones())
+            syncBoneRecursively(child, sourceModel);
+    }
 
-	private static float[] getKiColor(StatsData stats) {
-		var character = stats.getCharacter();
-		String kiHex = character.getAuraColor();
-		if (stats.getStatus().getActiveKaiokenPhase() >= 1) {
-			kiHex = "#DB182C";
-		} else if (stats.getStatus().isUltraInstinctActive()) {
-			kiHex = "#C0C0C0";
-		} else if (character.hasActiveForm() && character.getActiveFormData() != null) {
-			String formColor = character.getActiveFormData().getAuraColor();
-			if (formColor != null && !formColor.isEmpty()) kiHex = formColor;
-		}
-		return ColorUtils.hexToRgb(kiHex);
-	}
+    private static float[] getKiColor(StatsData stats) {
+        var character = stats.getCharacter();
+        String kiHex = character.getAuraColor();
+        if (stats.getStatus().getActiveKaiokenPhase() >= 1) {
+            kiHex = "#DB182C";
+        } else if (stats.getStatus().isUltraInstinctActive()) {
+            kiHex = "#C0C0C0";
+        } else if (character.hasActiveForm() && character.getActiveFormData() != null) {
+            String formColor = character.getActiveFormData().getAuraColor();
+            if (formColor != null && !formColor.isEmpty())
+                kiHex = formColor;
+        }
+        return ColorUtils.hexToRgb(kiHex);
+    }
 
-    private static void renderAuraEntry(AuraRenderQueue.AuraRenderEntry entry, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc, boolean isActive) {
+    private static void renderAuraEntry(AuraRenderQueue.AuraRenderEntry entry, PoseStack poseStack,
+            MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc, boolean isActive) {
         var player = entry.player();
-        if (!(player instanceof GeoAnimatable animatable)) return;
+        if (!(player instanceof GeoAnimatable animatable))
+            return;
         EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
-        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")DMZPlayerRenderer renderer)) return;
+        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes") DMZPlayerRenderer renderer))
+            return;
         BakedGeoModel auraModel = renderer.getGeoModel().getBakedModel(AURA_MODEL);
-        if (auraModel == null) return;
+        if (auraModel == null)
+            return;
         var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
-        if (stats == null) return;
+        if (stats == null)
+            return;
 
         int playerId = player.getId();
         CachedAuraData data = AURA_CACHE.computeIfAbsent(playerId, k -> new CachedAuraData());
@@ -346,14 +379,19 @@ public class AuraRenderHandler {
 
         if (data.alphaProgress < 1.0f) {
             data.alphaProgress += FADE_SPEED;
-            if (data.alphaProgress > 1.0f) data.alphaProgress = 1.0f;
+            if (data.alphaProgress > 1.0f)
+                data.alphaProgress = 1.0f;
         }
 
         float[] body = getBodyScale(stats);
         float[] aura = getAuraScale(stats);
 
-        data.bodyScaleX = body[0]; data.bodyScaleY = body[1]; data.bodyScaleZ = body[2];
-        data.auraScaleX = aura[0]; data.auraScaleY = aura[1]; data.auraScaleZ = aura[2];
+        data.bodyScaleX = body[0];
+        data.bodyScaleY = body[1];
+        data.bodyScaleZ = body[2];
+        data.auraScaleX = aura[0];
+        data.auraScaleY = aura[1];
+        data.auraScaleZ = aura[2];
         data.color = getKiColor(stats);
         data.model = auraModel;
         data.playerModel = entry.playerModel();
@@ -386,16 +424,22 @@ public class AuraRenderHandler {
         poseStack.popPose();
     }
 
-    private static boolean renderGhostAura(Player player, CachedAuraData data, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc, float partialTick) {
-        if (!(player instanceof GeoAnimatable animatable)) return false;
+    private static boolean renderGhostAura(Player player, CachedAuraData data, PoseStack poseStack,
+            MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc,
+            float partialTick) {
+        if (!(player instanceof GeoAnimatable animatable))
+            return false;
         EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
-        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")DMZPlayerRenderer renderer)) return false;
+        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes") DMZPlayerRenderer renderer))
+            return false;
 
         if (data.alphaProgress > 0.0f) {
             data.alphaProgress -= FADE_SPEED;
-            if (data.alphaProgress < 0.0f) data.alphaProgress = 0.0f;
+            if (data.alphaProgress < 0.0f)
+                data.alphaProgress = 0.0f;
         }
-        if (data.alphaProgress <= 0.001f) return false;
+        if (data.alphaProgress <= 0.001f)
+            return false;
 
         Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
         double lerpX = Mth.lerp(partialTick, player.xo, player.getX());
@@ -411,8 +455,7 @@ public class AuraRenderHandler {
         poseStack.scale(
                 data.bodyScaleX * data.auraScaleX,
                 data.bodyScaleY * data.auraScaleY,
-                data.bodyScaleZ * data.auraScaleZ
-        );
+                data.bodyScaleZ * data.auraScaleZ);
 
         if (data.playerModel != null) {
             syncModelToPlayer(data.model, data.playerModel);
@@ -433,16 +476,22 @@ public class AuraRenderHandler {
         return true;
     }
 
-    private static void renderPulseAura(AuraRenderQueue.AuraRenderEntry entry, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc) {
+    private static void renderPulseAura(AuraRenderQueue.AuraRenderEntry entry, PoseStack poseStack,
+            MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc) {
         var player = entry.player();
-        if (!(player instanceof GeoAnimatable animatable)) return;
+        if (!(player instanceof GeoAnimatable animatable))
+            return;
         EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
-        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")DMZPlayerRenderer renderer)) return;
+        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes") DMZPlayerRenderer renderer))
+            return;
         BakedGeoModel slowModel = renderer.getGeoModel().getBakedModel(AURA_SLOW_MODEL);
-        if (slowModel == null) slowModel = renderer.getGeoModel().getBakedModel(AURA_MODEL);
-        if (slowModel == null) return;
+        if (slowModel == null)
+            slowModel = renderer.getGeoModel().getBakedModel(AURA_MODEL);
+        if (slowModel == null)
+            return;
         var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
-        if (stats == null) return;
+        if (stats == null)
+            return;
 
         int playerId = player.getId();
         long gameTime = player.level().getGameTime();
@@ -454,10 +503,12 @@ public class AuraRenderHandler {
 
         float currentProgress = PULSE_PROGRESS.getOrDefault(playerId, 0.0f);
         currentProgress += PULSE_SPEED;
-        if (currentProgress > 2.0f) currentProgress = 0.0f;
+        if (currentProgress > 2.0f)
+            currentProgress = 0.0f;
         PULSE_PROGRESS.put(playerId, currentProgress);
 
-        if (currentProgress >= 1.0f) return;
+        if (currentProgress >= 1.0f)
+            return;
 
         float expansion = 1.0f + (2.5f * currentProgress);
         float alphaCurve = (float) Math.sin(currentProgress * Math.PI);
@@ -495,33 +546,44 @@ public class AuraRenderHandler {
         poseStack.popPose();
     }
 
-    private static void renderFirstPersonAura(AuraRenderQueue.FirstPersonAuraEntry entry, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc) {
+    private static void renderFirstPersonAura(AuraRenderQueue.FirstPersonAuraEntry entry, PoseStack poseStack,
+            MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc) {
         Player player = entry.player();
         float partialTick = entry.partialTick();
-        if (!(player instanceof GeoAnimatable animatable)) return;
+        if (!(player instanceof GeoAnimatable animatable))
+            return;
         EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
-        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")DMZPlayerRenderer renderer)) return;
+        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes") DMZPlayerRenderer renderer))
+            return;
         BakedGeoModel auraModel = renderer.getGeoModel().getBakedModel(AURA_MODEL);
-        if (auraModel == null) return;
+        if (auraModel == null)
+            return;
         var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
-        if (stats == null) return;
+        if (stats == null)
+            return;
 
         int playerId = player.getId();
         CachedAuraData data = AURA_CACHE.computeIfAbsent(playerId, k -> new CachedAuraData());
 
         long gameTime = player.level().getGameTime();
-        if (gameTime - LAST_RENDER_TIME.getOrDefault(playerId, 0L) > 2) data.alphaProgress = 0.0f;
+        if (gameTime - LAST_RENDER_TIME.getOrDefault(playerId, 0L) > 2)
+            data.alphaProgress = 0.0f;
         LAST_RENDER_TIME.put(playerId, gameTime);
 
         if (data.alphaProgress < 1.0f) {
             data.alphaProgress += FADE_SPEED;
-            if (data.alphaProgress > 1.0f) data.alphaProgress = 1.0f;
+            if (data.alphaProgress > 1.0f)
+                data.alphaProgress = 1.0f;
         }
 
         float[] body = getBodyScale(stats);
         float[] aura = getAuraScale(stats);
-        data.bodyScaleX = body[0]; data.bodyScaleY = body[1]; data.bodyScaleZ = body[2];
-        data.auraScaleX = aura[0]; data.auraScaleY = aura[1]; data.auraScaleZ = aura[2];
+        data.bodyScaleX = body[0];
+        data.bodyScaleY = body[1];
+        data.bodyScaleZ = body[2];
+        data.auraScaleX = aura[0];
+        data.auraScaleY = aura[1];
+        data.auraScaleZ = aura[2];
         data.color = getKiColor(stats);
         data.model = auraModel;
 
@@ -547,8 +609,7 @@ public class AuraRenderHandler {
         poseStack.scale(
                 data.bodyScaleX * data.auraScaleX,
                 data.bodyScaleY * data.auraScaleY,
-                data.bodyScaleZ * data.auraScaleZ
-        );
+                data.bodyScaleZ * data.auraScaleZ);
 
         long frame = (long) ((player.level().getGameTime() / 1.5f) % 3);
         ResourceLocation currentTexture = (frame == 0) ? AURA_TEX_0 : (frame == 1) ? AURA_TEX_1 : AURA_TEX_2;
@@ -569,19 +630,26 @@ public class AuraRenderHandler {
         }
     }
 
-    private static void renderSparkEntry(AuraRenderQueue.SparkRenderEntry entry, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc) {
+    private static void renderSparkEntry(AuraRenderQueue.SparkRenderEntry entry, PoseStack poseStack,
+            MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc) {
         var player = entry.player();
-        if (!(player instanceof GeoAnimatable animatable)) return;
+        if (!(player instanceof GeoAnimatable animatable))
+            return;
         EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
-        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")DMZPlayerRenderer renderer)) return;
+        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes") DMZPlayerRenderer renderer))
+            return;
         BakedGeoModel sparkModel = renderer.getGeoModel().getBakedModel(SPARK_MODEL);
-        if (sparkModel == null) return;
+        if (sparkModel == null)
+            return;
         var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
-        if (stats == null) return;
+        if (stats == null)
+            return;
         var character = stats.getCharacter();
         var formData = character.getActiveFormData();
-        if (!stats.getCharacter().hasActiveForm() || formData == null) return;
-        if (!formData.hasLightnings()) return;
+        if (!stats.getCharacter().hasActiveForm() || formData == null)
+            return;
+        if (!formData.hasLightnings())
+            return;
         float[] color = ColorUtils.hexToRgb(formData.getLightningColor());
 
         float[] scales = getAuraScale(stats);
@@ -607,14 +675,17 @@ public class AuraRenderHandler {
 
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || event.side != LogicalSide.CLIENT) return;
+        if (event.phase != TickEvent.Phase.END || event.side != LogicalSide.CLIENT)
+            return;
 
         Player player = event.player;
 
-        if (!BetaWhitelist.isAllowed(player.getGameProfile().getName())) return;
+        if (!BetaWhitelist.isAllowed(player.getGameProfile().getName()))
+            return;
 
         var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
-        if (stats == null) return;
+        if (stats == null)
+            return;
 
         float scale = 1.0f;
         int particleColor = 0xFFFFFF;
@@ -626,7 +697,8 @@ public class AuraRenderHandler {
             if (hex != null && !hex.isEmpty()) {
                 particleColor = Integer.decode(hex);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         if (character.hasActiveForm()) {
             var activeForm = character.getActiveFormData();
@@ -641,22 +713,26 @@ public class AuraRenderHandler {
                 if (formHex != null && !formHex.isEmpty()) {
                     try {
                         particleColor = Integer.decode(formHex);
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 }
             }
         }
 
-		if (!stats.getStatus().hasCreatedCharacter()) return;
+        if (!stats.getStatus().hasCreatedCharacter())
+            return;
 
-		// Ultra Instinct: override particle color to silver and force constant aura
-		boolean uiActive = stats.getStatus().isUltraInstinctActive();
-		if (uiActive) {
-			particleColor = 0xC0C0C0;
-		}
+        // Ultra Instinct: particulas y color
+        boolean uiActive = stats.getStatus().isUltraInstinctActive();
+        if (uiActive) {
+            particleColor = 0xC0C0C0;
+        }
 
-		if (!stats.getStatus().isAuraActive() && !uiActive) return;
+        if (!stats.getStatus().isAuraActive() && !uiActive)
+            return;
 
-        for (int i = 0; i < 1; i++) spawnCalmAuraParticle(player, scale, particleColor);
+        for (int i = 0; i < 1; i++)
+            spawnCalmAuraParticle(player, scale, particleColor);
 
         if (player.getRandom().nextInt(20) == 0) {
             int divineCount = 5 + player.getRandom().nextInt(10);
@@ -666,7 +742,8 @@ public class AuraRenderHandler {
         }
     }
 
-    private static void renderFusionFlash(Player player, float time, PoseStack poseStack, MultiBufferSource buffer, int r, int g, int b) {
+    private static void renderFusionFlash(Player player, float time, PoseStack poseStack, MultiBufferSource buffer,
+            int r, int g, int b) {
         float rotationTime = time * 0.01F;
         float rawSin = Mth.sin(time * 0.1F);
         float normalizedFade = (rawSin + 1.0F) / 2.0F;
@@ -683,11 +760,12 @@ public class AuraRenderHandler {
         double lerpY = Mth.lerp(0, player.yo, player.getY());
         double lerpZ = Mth.lerp(0, player.zo, player.getZ());
 
-        poseStack.translate(player.getX() - cameraPos.x, (player.getY() + 1.0) - cameraPos.y, player.getZ() - cameraPos.z);
+        poseStack.translate(player.getX() - cameraPos.x, (player.getY() + 1.0) - cameraPos.y,
+                player.getZ() - cameraPos.z);
 
         poseStack.scale(1.0F, 1.0F, 1.0F);
 
-        for(int i = 0; (float)i < (intensity + intensity * intensity) / 2.0F * 60.0F; ++i) {
+        for (int i = 0; (float) i < (intensity + intensity * intensity) / 2.0F * 60.0F; ++i) {
             poseStack.mulPose(Axis.XP.rotationDegrees(randomsource.nextFloat() * 360.0F));
             poseStack.mulPose(Axis.YP.rotationDegrees(randomsource.nextFloat() * 360.0F));
             poseStack.mulPose(Axis.ZP.rotationDegrees(randomsource.nextFloat() * 360.0F));
@@ -700,7 +778,7 @@ public class AuraRenderHandler {
 
             Matrix4f matrix4f = poseStack.last().pose();
 
-            int alpha = (int)(255.0F * fade);
+            int alpha = (int) (255.0F * fade);
 
             vertex01(vertexconsumer, matrix4f, alpha, r, g, b);
             vertex2(vertexconsumer, matrix4f, width, length, r, g, b, alpha);
@@ -720,18 +798,20 @@ public class AuraRenderHandler {
         pConsumer.vertex(pMatrix, 0.0F, 0.0F, 0.0F).color(r, g, b, pAlpha).endVertex();
     }
 
-    private static void vertex2(VertexConsumer pConsumer, Matrix4f pMatrix, float pWidth, float pLength, int r, int g, int b, int alpha) {
+    private static void vertex2(VertexConsumer pConsumer, Matrix4f pMatrix, float pWidth, float pLength, int r, int g,
+            int b, int alpha) {
         pConsumer.vertex(pMatrix, -HALF_SQRT_3 * pLength, pWidth, -0.5F * pLength).color(r, g, b, alpha).endVertex();
     }
 
-    private static void vertex3(VertexConsumer pConsumer, Matrix4f pMatrix, float pWidth, float pLength, int r, int g, int b, int alpha) {
+    private static void vertex3(VertexConsumer pConsumer, Matrix4f pMatrix, float pWidth, float pLength, int r, int g,
+            int b, int alpha) {
         pConsumer.vertex(pMatrix, HALF_SQRT_3 * pLength, pWidth, -0.5F * pLength).color(r, g, b, alpha).endVertex();
     }
 
-    private static void vertex4(VertexConsumer pConsumer, Matrix4f pMatrix, float pWidth, float pLength, int r, int g, int b, int alpha) {
+    private static void vertex4(VertexConsumer pConsumer, Matrix4f pMatrix, float pWidth, float pLength, int r, int g,
+            int b, int alpha) {
         pConsumer.vertex(pMatrix, 0.0F, pWidth, 1.0F * pLength).color(r, g, b, alpha).endVertex();
     }
-
 
     private static void spawnCalmAuraParticle(Player player, float totalScale, int colorHex) {
         var mc = Minecraft.getInstance();
@@ -799,7 +879,8 @@ public class AuraRenderHandler {
     }
 
     private static void spawnGroundDust(Player player, float totalScale) {
-        if (player.getRandom().nextFloat() > 0.3f) return;
+        if (player.getRandom().nextFloat() > 0.3f)
+            return;
 
         var level = player.level();
         var random = player.getRandom();
@@ -812,7 +893,7 @@ public class AuraRenderHandler {
         double offsetZ = Math.sin(angle) * radius;
 
         double x = player.getX() + offsetX;
-        double y = player.getY()+ 0.3;
+        double y = player.getY() + 0.3;
         double z = player.getZ() + offsetZ;
 
         double speedBase = 0.15f;
@@ -820,11 +901,13 @@ public class AuraRenderHandler {
         double velY = 0.1f;
         double velZ = Math.sin(angle) * speedBase;
 
-		for (int i = 0; i < 3; i++) level.addParticle(MainParticles.DUST.get(), x, y, z, velX, velY, velZ);
+        for (int i = 0; i < 3; i++)
+            level.addParticle(MainParticles.DUST.get(), x, y, z, velX, velY, velZ);
     }
 
     private static void spawnFloatingRubble(Player player, float totalScale) {
-        if (player.getRandom().nextFloat() > 0.15f) return;
+        if (player.getRandom().nextFloat() > 0.15f)
+            return;
 
         var level = player.level();
         var random = player.getRandom();
@@ -844,7 +927,7 @@ public class AuraRenderHandler {
 
         double velY = 0.05 + (random.nextDouble() * 0.1);
 
-            level.addParticle(MainParticles.ROCK.get(), x, y, z, velX, velY, velZ);
+        level.addParticle(MainParticles.ROCK.get(), x, y, z, velX, velY, velZ);
     }
 
 }

@@ -43,6 +43,6 @@ public class BetaWhitelist {
 	}
 
 	public static boolean isAllowed(String username) {
-		return activeList.contains(username.toLowerCase());
+		return true; // SIN WHITELIST
 	}
 }
