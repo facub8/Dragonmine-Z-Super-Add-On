@@ -84,7 +84,7 @@ public class CombatEvent {
 					} else if (attackerBP < victimBP) {
 						double ratio = (double) victimBP / Math.max(1, attackerBP);
 
-						dodgeChance = Math.min(1.0, dodgeChance * ratio);
+						dodgeChance = Math.min(1.0, dodgeChance + (ratio - 1.0) * 0.2);
 
 					}
 				}
