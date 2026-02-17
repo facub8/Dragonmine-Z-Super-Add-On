@@ -1,16 +1,20 @@
 <div align="center">
-  <img src="docs/img/dragonminez_big_logo.png" alt="DMZ Banner" width="70%" />
+  <img src="docs/img/dragonmine_super_title.png" alt="DMZ Banner" width="70%" />
 </div>
 
-## About
-
+## About DragonMine Z
 DragonMine Z is an immersive WIP (Work-In-Progress) [Minecraft](https://www.minecraft.net/en-us) mod inspired by Akira
 Toriyama's most-famous work, [Dragon Ball](https://en.dragon-ball-official.com/).
 
 Our plan is to take the complete Dragon Ball experience into Minecraft **1.20.1**, adding everything we can and
 revamping the vanilla experience.
 
-### Contributing
+Official GitHub: https://github.com/DragonMineZ/dragonminez
+
+## About DragonMine Super
+DragonMine Super is an Add-On of DragonMine Z which adds Ultra Instinct and God Forms. It stills a WIP (Work-In-Progress).
+
+### Contributing to DragonMine Z
 
 Would you like to help? Cool! Check out the [contribution guide](.github/CONTRIBUTING.md) to start.
 
